@@ -1,0 +1,11 @@
+<resources>
+	<string name="app_name">CRFCD</string>
+
+	<string name="saving_image">Saving Image</string>
+	<string name="resizing_image">Resizing Image</string>
+	<string name="recognizing">Recognizing</string>
+	<string name="loading_model">Loading Model</string>
+	<!-- TODO: Remove or change this placeholder text -->
+	<string name="hello_blank_fragment">Hello blank fragment</string>
+
+</resources>

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "641666994037",
+    "project_id": "crfcd-49c2e",
+    "storage_bucket": "crfcd-49c2e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:641666994037:android:ba451ea85a54ac39840d3c",
+        "android_client_info": {
+          "package_name": "com.ninesix.crfcd"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "641666994037-klflni57ljfamevj26obvnq9dblan6ae.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOI9subTYl8gTmBNWDlAMnSfEpwXn6lXk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "641666994037-klflni57ljfamevj26obvnq9dblan6ae.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:background="@drawable/rectangle_with_corners"
+	android:orientation="vertical"
+	tools:context=".LoadingImageFragment">
+
+	<LinearLayout
+		android:id="@+id/loading_fragment_layout"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:padding="8dp"
+		android:layout_margin="8dp"
+		android:orientation="vertical">
+
+		<LinearLayout
+			android:id="@+id/save_layout"
+			android:layout_width="match_parent"
+			android:layout_height="50dp"
+			android:layout_marginVertical="4dp"
+			android:background="@drawable/recycler_border"
+			android:orientation="horizontal"
+			android:translationX="0dp">
+
+			<TextView
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center_vertical"
+				android:layout_weight="70"
+				android:layout_marginLeft="8dp"
+				android:text="@string/saving_image"
+				android:textColor="#808080"
+				android:textSize="18sp" />
+
+			<ProgressBar
+				android:id="@+id/save_progress"
+				android:layout_width="wrap_content"
+				android:layout_height="40dp"
+				android:layout_gravity="center"
+				android:layout_weight="30" />
+
+			<ImageView
+				android:id="@+id/save_check"
+				android:layout_width="40dp"
+				android:layout_height="40dp"
+				android:layout_gravity="center"
+				android:layout_weight="30"
+				android:src="@drawable/check"
+				android:visibility="gone" />
+
+		</LinearLayout>
+
+		<LinearLayout
+			android:id="@+id/resize_layout"
+			android:layout_marginVertical="4dp"
+			android:layout_width="match_parent"
+			android:layout_height="50dp"
+			android:background="@drawable/recycler_border"
+			android:orientation="horizontal">
+
+			<TextView
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center_vertical"
+				android:layout_marginLeft="8dp"
+				android:layout_weight="70"
+				android:text="@string/resizing_image"
+				android:textColor="#808080"
+				android:textSize="18sp" />
+
+			<ProgressBar
+				android:id="@+id/resize_progress"
+				android:layout_width="wrap_content"
+				android:layout_height="40dp"
+				android:layout_gravity="center"
+				android:layout_weight="30" />
+
+			<ImageView
+				android:id="@+id/resize_check"
+				android:layout_width="40dp"
+				android:layout_height="40dp"
+				android:layout_gravity="center"
+				android:layout_weight="30"
+				android:src="@drawable/check"
+				android:visibility="gone" />
+
+		</LinearLayout>
+
+		<LinearLayout
+			android:id="@+id/loading_model_layout"
+			android:layout_marginVertical="4dp"
+			android:layout_width="match_parent"
+			android:layout_height="50dp"
+			android:background="@drawable/recycler_border"
+			android:orientation="horizontal">
+
+			<TextView
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center_vertical"
+				android:layout_marginLeft="8dp"
+				android:layout_weight="70"
+				android:text="@string/loading_model"
+				android:textColor="#808080"
+				android:textSize="18sp" />
+
+			<ProgressBar
+				android:id="@+id/loading_model_progress"
+				android:layout_width="wrap_content"
+				android:layout_height="40dp"
+				android:layout_gravity="center"
+				android:layout_weight="30" />
+
+			<ImageView
+				android:id="@+id/loading_model_check"
+				android:layout_width="40dp"
+				android:layout_height="40dp"
+				android:layout_gravity="center"
+				android:layout_weight="30"
+				android:src="@drawable/check"
+				android:visibility="gone" />
+
+		</LinearLayout>
+
+		<LinearLayout
+			android:id="@+id/recognizing_layout"
+			android:layout_marginVertical="4dp"
+			android:layout_width="match_parent"
+			android:layout_height="50dp"
+			android:background="@drawable/recycler_border"
+			android:orientation="horizontal">
+
+			<TextView
+				android:layout_width="0dp"
+				android:layout_marginLeft="8dp"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center_vertical"
+				android:layout_weight="70"
+				android:text="@string/recognizing"
+				android:textColor="#808080"
+				android:textSize="18sp" />
+
+			<ProgressBar
+				android:id="@+id/recognizing_progress"
+				android:layout_width="wrap_content"
+				android:layout_height="40dp"
+				android:layout_gravity="center"
+				android:layout_weight="30" />
+
+			<ImageView
+				android:id="@+id/recognizing_check"
+				android:layout_width="40dp"
+				android:layout_height="40dp"
+				android:layout_gravity="center"
+				android:layout_weight="30"
+				android:src="@drawable/check"
+				android:visibility="gone" />
+
+		</LinearLayout>
+
+	</LinearLayout>
+
+	<LinearLayout
+		android:id="@+id/loading_fragment_recycler_layout"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="vertical">
+
+		<TextView
+			android:id="@+id/loading_fragment_recycler_title"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textColor="#808080"
+			android:textSize="22sp"
+			android:textStyle="bold|italic" />
+
+		<androidx.recyclerview.widget.RecyclerView
+			android:id="@+id/viewPager_recyclerView"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginHorizontal="24dp" />
+
+	</LinearLayout>
+
+</LinearLayout>

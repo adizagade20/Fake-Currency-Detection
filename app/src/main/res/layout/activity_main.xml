@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/main_parent_layout"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:orientation="vertical"
+	tools:context=".MainActivity">
+
+	<include
+		android:id="@+id/main_toolbar_include"
+		layout="@layout/layout_toolbar"
+		app:layout_constraintBottom_toTopOf="@id/main_layout"
+		app:layout_constraintLeft_toLeftOf="parent"
+		app:layout_constraintRight_toRightOf="parent"
+		app:layout_constraintTop_toTopOf="parent" />
+
+	<LinearLayout
+		android:id="@+id/main_layout"
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:orientation="vertical"
+		android:weightSum="100"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintLeft_toLeftOf="parent"
+		app:layout_constraintRight_toRightOf="parent"
+		app:layout_constraintTop_toBottomOf="@id/main_toolbar_include">
+
+		<androidx.constraintlayout.widget.ConstraintLayout
+			android:id="@+id/main_capture_layout"
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_weight="88"
+			android:orientation="vertical">
+
+			<androidx.camera.view.PreviewView
+				android:id="@+id/viewFinder"
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				app:layout_constraintBottom_toBottomOf="parent"
+				app:layout_constraintLeft_toLeftOf="parent"
+				app:layout_constraintRight_toRightOf="parent"
+				app:layout_constraintTop_toTopOf="parent" />
+
+			<include
+				android:id="@+id/focus_overlay_include"
+				layout="@layout/layout_focus_overlay"
+				app:layout_constraintBottom_toBottomOf="@id/viewFinder"
+				app:layout_constraintLeft_toLeftOf="@id/viewFinder"
+				app:layout_constraintRight_toRightOf="@id/viewFinder"
+				app:layout_constraintTop_toTopOf="@id/viewFinder" />
+
+			<TextView
+				android:id="@+id/imageTypeTextView"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:text="20"
+				android:textAlignment="center"
+				android:textColor="@color/teal_200"
+				android:textSize="24sp"
+				app:layout_constraintBottom_toBottomOf="parent"
+				app:layout_constraintLeft_toLeftOf="parent"
+				app:layout_constraintRight_toRightOf="parent"
+				app:layout_constraintTop_toTopOf="parent"
+				app:layout_constraintVertical_bias="0.05" />
+
+			<include
+				android:id="@+id/camera_overlay_include"
+				layout="@layout/layout_camera_overlay"
+				app:layout_constraintBottom_toBottomOf="parent"
+				app:layout_constraintLeft_toLeftOf="parent"
+				app:layout_constraintRight_toRightOf="parent"
+				app:layout_constraintTop_toTopOf="parent" />
+
+		</androidx.constraintlayout.widget.ConstraintLayout>
+
+		<include
+			android:id="@+id/camera_controls"
+			layout="@layout/layout_camera_controls"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintLeft_toLeftOf="parent"
+			app:layout_constraintRight_toRightOf="parent"
+			app:layout_constraintTop_toBottomOf="@id/main_capture_layout" />
+
+	</LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
