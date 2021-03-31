@@ -7,7 +7,6 @@ import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
@@ -23,8 +22,6 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 	
 	companion object {
 		private const val TAG = "ResultActivity"
-		var isExpanded: Boolean = false
-		var expandedPosition: Int = -1
 	}
 	
 	//---------------------------------------------------------------------------------------- VARIABLES ----------------------------------------------------------------------------------------//
@@ -90,55 +87,61 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 //		val data = modelLabel?.let { ModelLabelHelper().getModelAndLabelFileName(it) }
 //		Timer().schedule(0) {
 		
-		val customModelInterpreter = CustomModelInterpreter(applicationContext, "100NewFrontNormal", progress)
 		val options = BitmapFactory.Options()
 		options.inMutable = true
 		
-		
-		/*Timer().schedule(1000) {
+		CoroutineScope(Dispatchers.IO).launch {
 			if (frontPath != null) {
-//				loadModel(data[0], data[1], data[2].toInt(), "normal", normalImagePath)
-				val predictions = customModelInterpreter.checkForInterpreter(frontPath).toMutableList()
-				predictions.add(0, ObjectPrediction(RectF(0f,0f,0f,0f), "null", 0f))
+				val predictions = CustomModelInterpreter(applicationContext, "100NewFrontNormal", progress).execute(frontPath).toMutableList()
+				Log.d(TAG, "onCreate: 0: ${predictions.size}")
+				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
 				val bitmap = BitmapFactory.decodeFile(Uri.parse(frontPath).path, options)
 				dataForViewPager.add(0, ViewPagerData(predictions, bitmap))
-				viewPagerAdapter.notifyItemInserted(0)
+				runOnUiThread { viewPagerAdapter.notifyItemInserted(0) }
 				isDataReady()
 			}
-		}
-		
-		Timer().schedule(1500) {
+			
 			if (whiteLightPath != null) {
-//				loadModel(data[3], data[4], data[5].toInt(), "white", whiteLightImagePath)
-				val predictions = customModelInterpreter.checkForInterpreter(whiteLightPath).toMutableList()
-				predictions.add(0, ObjectPrediction(RectF(0f,0f,0f,0f), "null", 0f))
+				val predictions = CustomModelInterpreter(applicationContext, "100NewFrontNormal", progress).execute(whiteLightPath).toMutableList()
+				Log.d(TAG, "onCreate: 1: ${predictions.size}")
+				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
 				val bitmap = BitmapFactory.decodeFile(Uri.parse(whiteLightPath).path, options)
 				dataForViewPager.add(1, ViewPagerData(predictions, bitmap))
-				viewPagerAdapter.notifyItemInserted(1)
+				runOnUiThread { viewPagerAdapter.notifyItemInserted(1) }
 				isDataReady()
 			}
-		}
-		
-		Timer().schedule(2000) {
+			
 			if (backPath != null) {
-//				loadModel(data[6], data[7], data[8].toInt(), "uv", uvLightImagePath)
-				val predictions = customModelInterpreter.checkForInterpreter(backPath).toMutableList()
+				val predictions = CustomModelInterpreter(applicationContext, "100NewFrontNormal", progress).execute(backPath).toMutableList()
+				Log.d(TAG, "onCreate: 2: ${predictions.size}")
 				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
 				val bitmap = BitmapFactory.decodeFile(Uri.parse(backPath).path, options)
 				dataForViewPager.add(2, ViewPagerData(predictions, bitmap))
-				viewPagerAdapter.notifyItemInserted(2)
+				runOnUiThread { viewPagerAdapter.notifyItemInserted(2) }
 				isDataReady()
 			}
-		}*/
+		}
 	}
 	
 	
 	private fun isDataReady() {
 		if (dataForViewPager.size > 2) {
-			dataForViewPager.add(3, null)
-			runOnUiThread { viewPagerAdapter.notifyItemInserted(3) }
+			runOnUiThread {
+				dataForViewPager.add(3, null)
+				viewPagerAdapter.notifyItemInserted(3)
+				progress.dismiss()
+			}
 		}
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	private fun loadModel(model_path: String, label_path: String, numberOfResults: Int, type: String, imagePath: String) = launch {
@@ -209,9 +212,3 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 	
 	
 }
-
-
-
-
-
-data class ViewPagerData(val predictions: MutableList<ObjectPrediction>, val bitmap: Bitmap)

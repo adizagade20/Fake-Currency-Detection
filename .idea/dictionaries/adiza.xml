@@ -3,16 +3,9 @@
     <words>
       <w>crfcd</w>
       <w>firestore</w>
-      <w>newback</w>
-      <w>newfront</w>
       <w>ninesix</w>
-      <w>oldback</w>
-      <w>oldfront</w>
       <w>tensorflow</w>
-      <w>tessdata</w>
-      <w>tesseract</w>
       <w>tflite</w>
-      <w>traineddata</w>
     </words>
   </dictionary>
 </component>

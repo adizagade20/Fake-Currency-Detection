@@ -172,12 +172,9 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 	}
 	
 	
-	data class ObjectPrediction(val location: RectF, val label: String, val score: Float)
 }
-		
-		
-		
-		
+
+
 		
 		/*private val predictions  get() = (0 until numberOfResults).map { it ->
 			ObjectPrediction(

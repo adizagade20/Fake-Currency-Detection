@@ -150,5 +150,3 @@ private class FloatClassifier(
 		}
 	
 }
-
-data class ObjectPrediction(val location: RectF, val label: String, val score: Float)

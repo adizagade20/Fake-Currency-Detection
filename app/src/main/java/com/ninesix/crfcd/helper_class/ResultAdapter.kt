@@ -153,7 +153,7 @@ class ResultAdapter(
 		
 		try {
 			var smallBitmap = Bitmap.createBitmap(bitmap, left, top, smallWidth, smallHeight)
-			smallBitmap = Bitmap.createScaledBitmap(smallBitmap, 65, 65, false)
+			smallBitmap = Bitmap.createScaledBitmap(smallBitmap, 150, 150, false)
 			
 			(context as AppCompatActivity).runOnUiThread {
 				imageView.setImageBitmap(smallBitmap)

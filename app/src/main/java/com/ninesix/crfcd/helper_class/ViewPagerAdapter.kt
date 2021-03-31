@@ -14,8 +14,6 @@ import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.ValueFormatter
 import com.github.mikephil.charting.interfaces.datasets.IBarDataSet
 import com.ninesix.crfcd.R
-import com.ninesix.crfcd.ResultActivity
-import com.ninesix.crfcd.ViewPagerData
 import kotlin.collections.ArrayList
 
 class ViewPagerAdapter(private val context: Context, private val dataForViewPager: ArrayList<ViewPagerData?>): RecyclerView.Adapter<ViewHolder>(){

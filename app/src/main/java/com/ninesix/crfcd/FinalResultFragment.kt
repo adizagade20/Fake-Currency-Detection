@@ -7,10 +7,10 @@ import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.ValueFormatter
 import com.github.mikephil.charting.interfaces.datasets.IBarDataSet
-import com.ninesix.crfcd.helper_class.CustomModelInterpreter
+import com.ninesix.crfcd.helper_class.ObjectPrediction
 
-class FinalResultFragment(private val allPredictions : ArrayList<List<CustomModelInterpreter.ObjectPrediction>>, private val rootView : View) {
-
+class FinalResultFragment(private val allPredictions : ArrayList<List<ObjectPrediction>>, private val rootView : View) {
+	
 	companion object {
 		private val RESULTS = arrayOf("Normal", "White", "UV")
 	}
