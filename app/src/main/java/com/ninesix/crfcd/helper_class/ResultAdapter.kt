@@ -49,13 +49,9 @@ class ResultAdapter(
 	override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
 		return if (viewType == 0) {
 			val binding = LayoutResultRecyclerBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-//			val layoutInflater = LayoutInflater.from(parent.context)
-//			val listItem = layoutInflater.inflate(R.layout.layout_result_recycler, parent, false)
 			ViewHolderOne(binding)
 		} else {
 			val binding = LayoutResultRecyclerFirstTileBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-//			val layoutInflater = LayoutInflater.from(parent.context)
-//			val listItem = layoutInflater.inflate(R.layout.layout_result_recycler_first_tile, parent, false)
 			ViewHolderTwo(binding)
 		}
 	}
@@ -77,9 +73,6 @@ class ResultAdapter(
 					}
 				}
 			}
-//			holder.labelTextView.text = predictions[position].label
-//			"${(predictions[position].score * 100).toInt()} %".also { holder.scoreTextView.text = it }
-//			setSmallImage(position, holder.imageView)
 		} else if (predictions[position].label == "null") {
 			holder as ViewHolderTwo
 			

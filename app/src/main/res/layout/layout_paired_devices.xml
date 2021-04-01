@@ -30,7 +30,7 @@
 			android:layout_gravity="center"
 			android:text="Paired Devices"
 			android:textColor="@color/black"
-			android:textSize="25sp"
+			android:textSize="22sp"
 			app:layout_constraintBottom_toBottomOf="parent"
 			app:layout_constraintLeft_toRightOf="@id/bluetooth_paired_iv"
 			app:layout_constraintRight_toRightOf="parent"

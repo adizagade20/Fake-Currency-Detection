@@ -1,6 +1,5 @@
 package com.ninesix.crfcd
 
-import android.app.ProgressDialog
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.RectF
@@ -27,8 +26,6 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 	//---------------------------------------------------------------------------------------- VARIABLES ----------------------------------------------------------------------------------------//
 	override val coroutineContext: CoroutineContext get() = Job() + Dispatchers.Default
 	
-	private lateinit var progress: ProgressDialog
-	
 	
 	//----------------------------- HOOKS -----------------------------//
 	private lateinit var viewPager2 : ViewPager2
@@ -52,9 +49,13 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 		viewPager2 = findViewById(R.id.viewPager2)
 		tabLayout = findViewById(R.id.tabLayout)
 		
-		progress = ProgressDialog.show(this, "Analysing", "Please wait!!!")
-		
 		viewPagerAdapter = ViewPagerAdapter(this, dataForViewPager)
+		
+//		dataForViewPager.add(0, null)
+//		dataForViewPager.add(1, null)
+//		dataForViewPager.add(2, null)
+//		dataForViewPager.add(3, null)
+		
 		viewPager2.adapter = viewPagerAdapter
 		
 		TabLayoutMediator(tabLayout, viewPager2) { tab, position ->
@@ -74,8 +75,8 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 		var backPath = intent.getStringExtra("back")
 		
 		frontPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/1.jpg"
-		whiteLightPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/1.jpg"
-		backPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/1.jpg"
+		whiteLightPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/2021-04-01-11-10-24-439.jpg"
+		backPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/2021-04-01-11-11-08-752.jpg"
 		
 		
 		
@@ -92,32 +93,32 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 		
 		CoroutineScope(Dispatchers.IO).launch {
 			if (frontPath != null) {
-				val predictions = CustomModelInterpreter(applicationContext, "100NewFrontNormal", progress).execute(frontPath).toMutableList()
+				val predictions = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal").execute(frontPath).toMutableList()
 				Log.d(TAG, "onCreate: 0: ${predictions.size}")
 				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
 				val bitmap = BitmapFactory.decodeFile(Uri.parse(frontPath).path, options)
 				dataForViewPager.add(0, ViewPagerData(predictions, bitmap))
-				runOnUiThread { viewPagerAdapter.notifyItemInserted(0) }
+				runOnUiThread { viewPagerAdapter.notifyItemChanged(0) }
 				isDataReady()
 			}
 			
 			if (whiteLightPath != null) {
-				val predictions = CustomModelInterpreter(applicationContext, "100NewFrontNormal", progress).execute(whiteLightPath).toMutableList()
+				val predictions = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal").execute(whiteLightPath).toMutableList()
 				Log.d(TAG, "onCreate: 1: ${predictions.size}")
 				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
 				val bitmap = BitmapFactory.decodeFile(Uri.parse(whiteLightPath).path, options)
 				dataForViewPager.add(1, ViewPagerData(predictions, bitmap))
-				runOnUiThread { viewPagerAdapter.notifyItemInserted(1) }
+				runOnUiThread { viewPagerAdapter.notifyItemChanged(1) }
 				isDataReady()
 			}
 			
 			if (backPath != null) {
-				val predictions = CustomModelInterpreter(applicationContext, "100NewFrontNormal", progress).execute(backPath).toMutableList()
+				val predictions = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal").execute(backPath).toMutableList()
 				Log.d(TAG, "onCreate: 2: ${predictions.size}")
 				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
 				val bitmap = BitmapFactory.decodeFile(Uri.parse(backPath).path, options)
 				dataForViewPager.add(2, ViewPagerData(predictions, bitmap))
-				runOnUiThread { viewPagerAdapter.notifyItemInserted(2) }
+				runOnUiThread { viewPagerAdapter.notifyItemChanged(2) }
 				isDataReady()
 			}
 		}
@@ -125,11 +126,15 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 	
 	
 	private fun isDataReady() {
-		if (dataForViewPager.size > 2) {
+		var isReady = true
+		for(i in 0 until dataForViewPager.size) {
+			if(dataForViewPager[i] != null) {
+				isReady = false
+			}
+		}
+		if(isReady) {
 			runOnUiThread {
-				dataForViewPager.add(3, null)
-				viewPagerAdapter.notifyItemInserted(3)
-				progress.dismiss()
+				viewPagerAdapter.notifyItemChanged(3)
 			}
 		}
 	}
@@ -185,7 +190,6 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 		var index: Int? = null
 		when (type) {
 			"normal" -> {
-				progress.dismiss()
 				dataForViewPager.add(0, ViewPagerData(modifiedPredictions, bitmap))
 				index = 0
 			}

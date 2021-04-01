@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.graphics.RectF
 import android.net.Uri
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.ktx.firestore
@@ -25,7 +26,7 @@ import java.util.concurrent.CountDownLatch
 import kotlin.collections.ArrayList
 import kotlin.coroutines.CoroutineContext
 
-class CustomModelInterpreter(private val context: Context, private val modelName: String, private var progress: ProgressDialog ?= null): CoroutineScope {
+class CustomModelInterpreter(private val context: Context, private val modelName: String): CoroutineScope {
 	
 	private val job = Job()
 	override val coroutineContext: CoroutineContext get() = Dispatchers.Default + job
@@ -34,6 +35,7 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 	private var numberOfResults: Int = 0
 	
 	private var interpreter: Interpreter ?= null
+	private lateinit var progress: ProgressDialog
 	
 	companion object {
 		private const val TAG = "CustomModelInterpreter"
@@ -63,8 +65,8 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 	
 	
 	private fun onPreExecute() {
-		if(progress != null) {
-//			progress = ProgressDialog.show(context, "Downloading", "Please wait, downloading the latest version of the model")
+		(context as AppCompatActivity).runOnUiThread {
+			progress = ProgressDialog.show(context, "Analysing", "Please wait, if model is not available locally, will download it first")
 		}
 	}
 	
@@ -82,6 +84,7 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 				if (modelFile != null) {
 					interpreter = Interpreter(modelFile)
 					done.countDown()
+					progress.dismiss()
 				}
 			}
 		done.await()
@@ -90,27 +93,27 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 	
 	
 	private suspend fun doInBackground(imagePath: String): List<ObjectPrediction> = withContext(Dispatchers.IO) {
-	
-	    var bitmap = BitmapFactory.decodeFile(Uri.parse(imagePath).path)
+		
+		var bitmap = BitmapFactory.decodeFile(Uri.parse(imagePath).path)
 		bitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, false)
 		val input = ByteBuffer.allocateDirect(640 * 640 * 3 * 4).order(ByteOrder.nativeOrder())
 		
-		for (y in 0 until 640) {
-			for (x in 0 until 640) {
+		for (y in 0 until 224) {
+			for (x in 0 until 224) {
 				val px = bitmap.getPixel(x, y)
-
+				
 				// Get channel values from the pixel value.
 				val r = Color.red(px)
 				val g = Color.green(px)
 				val b = Color.blue(px)
-
+				
 				// Normalize channel values to [-1.0, 1.0]. This requirement depends on the model.
 				// For example, some models might require values to be normalized to the range
 				// [0.0, 1.0] instead.
 				val rf = (r - 127) / 255f
 				val gf = (g - 127) / 255f
 				val bf = (b - 127) / 255f
-
+				
 				input.putFloat(rf)
 				input.putFloat(gf)
 				input.putFloat(bf)
@@ -126,17 +129,18 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 								input[batchNum][x][y][2] = (Color.blue(pixel) - 127) / 128.0f;*/
 		
 		val locations = arrayOf(Array(numberOfResults) { FloatArray(4) })
-		val labelIndices = arrayOf(FloatArray(numberOfResults))
-		val scores = arrayOf(FloatArray(numberOfResults))
+		val labelIndices =  arrayOf(FloatArray(numberOfResults))
+		val scores =  arrayOf(FloatArray(numberOfResults))
 		val outputBuffer = mapOf(0 to locations, 1 to labelIndices, 2 to scores, 3 to FloatArray(1))
+		
+		Log.d(TAG, "doInBackground: $input")
 		
 		interpreter?.runForMultipleInputsOutputs(arrayOf(input), outputBuffer)
 		
 		val predictions = (0 until numberOfResults).map { it ->
-			ObjectPrediction(
-				location = locations[0][it].let {                   // The locations are an array of [0, 1] floats for [top, left, bottom, right]
-					RectF(it[1], it[0], it[3], it[2])
-				},
+			ObjectPrediction(location = locations[0][it].let {                   // The locations are an array of [0, 1] floats for [top, left, bottom, right]
+				RectF(it[1], it[0], it[3], it[2])
+															 },
 				// SSD MobileNet V1 Model assumes class 0 is background class in label file and class labels start from 1 to number_of_classes+1,
 				// while outputClasses correspond to class index from 0 to number_of_classes
 				label = labelList[0 + labelIndices[0][it].toInt()],
@@ -170,7 +174,6 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 				}
 			}
 	}
-	
 	
 }
 

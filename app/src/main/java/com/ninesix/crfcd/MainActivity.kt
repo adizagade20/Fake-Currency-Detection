@@ -116,7 +116,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		binding = ActivityMainBinding.inflate(layoutInflater)
 		setContentView(binding.root)
 		
-		bluetoothListAlertBox()
+//		bluetoothListAlertBox()
+		
+		onCreateContinued()
 		
 	}
 	
@@ -480,7 +482,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 					"front" -> {
 						binding.imageTypeTextView.text = IMAGE_TYPE[1]
 						CoroutineScope(Dispatchers.IO).launch {
-							val predictions = CustomModelInterpreter(applicationContext, "100NewFrontNormal", progress).execute(savedUri.toString())
+							val predictions = CustomModelInterpreter(this@MainActivity, "100NewFrontNormal").execute(savedUri.toString())
 							Log.d(TAG, "onImageSaved: $predictions")
 						}
 					}
