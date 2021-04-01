@@ -11,7 +11,7 @@
 
 	<ImageView
 		android:id="@+id/result_recycler_first_imageView"
-		android:layout_width="wrap_content"
+		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
 		android:adjustViewBounds="true"
 		android:scaleType="fitXY" />
@@ -22,7 +22,6 @@
 		android:layout_height="wrap_content"
 		android:layout_gravity="center_vertical"
 		android:layout_marginStart="8dp"
-		android:textColor="#000"
 		android:textSize="20sp" />
 
 </LinearLayout>

@@ -23,18 +23,10 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 
 
-class ResultAdapter(
-	private val context: Context,
-	private val predictions: MutableList<ObjectPrediction>,
-	private val bitmap: Bitmap
-) : RecyclerView.Adapter<ViewHolder>(), CoroutineScope {
+class ResultAdapter(private val context: Context, private val predictions: MutableList<ObjectPrediction>, private val bitmap: Bitmap) : RecyclerView.Adapter<ViewHolder>(), CoroutineScope {
 	
 	private val job = Job()
 	override val coroutineContext: CoroutineContext get() = job + Dispatchers.Default
-	
-//	private var isExpanded = false
-//	private var expandedPosition = -1
-	private lateinit var expandedLayout : LinearLayout
 	
 	companion object {
 		const val TAG = "ResultAdapter"
@@ -63,7 +55,8 @@ class ResultAdapter(
 			with(holder) {
 				with(predictions[position]) {
 					binding.resultRecyclerLabelTv.text = this.label
-					"${(this.score * 100).toInt()} %".also { binding.resultRecyclerScoreTv.text = it }
+					"${(this.score * 100).toInt()}%".also { binding.resultRecyclerScoreTv.text = it }
+					binding.resultRecyclerScoreProgress.progress = (this.score * 100).toInt()
 					setSmallImage(position, binding.resultRecyclerImageView)
 				}
 				
@@ -86,26 +79,8 @@ class ResultAdapter(
 					else -> "$count points are matched!"
 				}
 			}
-
-//			var count = 0
-//			predictions.forEach { if (it.score > 0.7f) count++ }
-//			val text = when(count) {
-//				0 -> "No point matched!"
-//				1 -> "Only $count point is matched!"
-//				else -> "$count points are matched!"
-//			}
-//			holder.textView.text = text
-//			setImageWithMarkings(bitmap, holder.imageView)
+			
 		}
-		
-		/*holder.linearLayout.setOnClickListener {
-			if(smallBitmap != null)
-				imageView.setImageBitmap(smallBitmap)
-			else
-				Toast.makeText(context, "Image cannot be cropped onto that area, try another :'(", Toast.LENGTH_LONG).show()
-//				imageView.setImageResource(R.drawable.error_outline)
-		}*/
-		
 	}
 	
 	
@@ -116,11 +91,12 @@ class ResultAdapter(
 		paint.alpha = 0xA0
 		paint.color = Color.MAGENTA
 		paint.style = Paint.Style.STROKE
-		paint.textSize = 18f
+		paint.textSize = 30f
 		paint.strokeWidth = 2f
 		
 		predictions.forEach {
-			if (it.score >= 0.1f) {
+			Log.d(TAG, "setImageWithMarkings: ${it.location} : ${it.score}")
+			if (it.score >= 0.01f) {
 				canvas.drawRect(
 					RectF(
 						it.location.left * 640,
@@ -132,8 +108,9 @@ class ResultAdapter(
 				canvas.drawText(it.label, it.location.left * 640, it.location.top * 640 - 5, paint)
 			}
 		}
+		
 		(context as AppCompatActivity).runOnUiThread {
-			imageView.setImageBitmap(Bitmap.createScaledBitmap(bitmap2, bitmap2.width, bitmap2.height, false))
+			imageView.setImageBitmap(Bitmap.createScaledBitmap(bitmap2, 400, 300, false))
 		}
 	}
 	
@@ -165,17 +142,9 @@ class ResultAdapter(
 	}
 	
 	
-	class ViewHolderOne(val binding: LayoutResultRecyclerBinding) : RecyclerView.ViewHolder(binding.root) {
-//		val labelTextView: TextView = itemView.findViewById(R.id.result_recycler_label_tv)
-//		val scoreTextView: TextView = itemView.findViewById(R.id.result_recycler_score_tv)
-//		val imageView: ImageView = itemView.findViewById(R.id.result_recycler_imageView)
-	}
+	class ViewHolderOne(val binding: LayoutResultRecyclerBinding) : RecyclerView.ViewHolder(binding.root)
 	
 	
-	class ViewHolderTwo(val binding: LayoutResultRecyclerFirstTileBinding) : RecyclerView.ViewHolder(binding.root) {
-//		val imageView : ImageView = itemView.findViewById(R.id.result_recycler_first_imageView)
-//		val textView : TextView = itemView.findViewById(R.id.result_recycler_first_textView)
-	}
-
+	class ViewHolderTwo(val binding: LayoutResultRecyclerFirstTileBinding) : RecyclerView.ViewHolder(binding.root)
 	
 }

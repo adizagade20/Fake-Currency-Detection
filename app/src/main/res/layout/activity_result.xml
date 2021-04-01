@@ -1,19 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
-	android:orientation="vertical"
 	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/result_parent_layout"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
+	android:orientation="vertical"
 	tools:context=".ResultActivity">
+
+	<include
+		android:id="@+id/result_toolbar_include"
+		layout="@layout/layout_toolbar"
+		app:layout_constraintBottom_toTopOf="@id/main_layout"
+		app:layout_constraintLeft_toLeftOf="parent"
+		app:layout_constraintRight_toRightOf="parent"
+		app:layout_constraintTop_toTopOf="parent" />
 
 	<com.google.android.material.tabs.TabLayout
 		android:id="@+id/tabLayout"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		app:layout_constraintTop_toTopOf="parent"
 		app:layout_constraintLeft_toLeftOf="parent"
 		app:layout_constraintRight_toRightOf="parent"
+		app:layout_constraintTop_toTopOf="parent"
 		app:tabMode="auto" />
 
 	<androidx.viewpager2.widget.ViewPager2

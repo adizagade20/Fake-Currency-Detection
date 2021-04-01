@@ -7,5 +7,13 @@
 	<string name="loading_model">Loading Model</string>
 	<!-- TODO: Remove or change this placeholder text -->
 	<string name="hello_blank_fragment">Hello blank fragment</string>
+	<string name="website">https://dummywebsite.com</string>
+	<string name="nav_home">Home</string>
+	<string name="nav_share">Share</string>
+	<string name="nav_rate_us">Rate us</string>
+	<string name="threshold">Threshold</string>
+	<string name="nav_communicate">Communicate</string>
+	<string name="navigation_drawer_open">Open navigation drawer</string>
+	<string name="navigation_drawer_close">Close navigation drawer</string>
 
 </resources>

@@ -86,16 +86,15 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 		modelNames.add(modelName + "WhiteLight")
 		modelNames.add(modelName + "WhiteLight")
 		
-		Log.d(TAG, "onCreate: $imagePaths \n$modelNames")
-		
 		CoroutineScope(Dispatchers.IO).launch {
-			val customModelInterpreter = CustomModelInterpreter(this@ResultActivity)
+			val customModelInterpreter = CustomModelInterpreter()
 			val allPredictions = customModelInterpreter.detailedExecute(imagePaths, modelNames)
 			for ((index, data) in allPredictions.withIndex()) {
 				val predictions = data.toMutableList()
 				Log.d(TAG, "onCreate: ${predictions.size}")
 				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
-				val bitmap = BitmapFactory.decodeFile(Uri.parse(frontPath).path, options)
+				var bitmap = BitmapFactory.decodeFile(Uri.parse(frontPath).path, options)
+				bitmap = Bitmap.createScaledBitmap(bitmap, bitmap.width / 3, bitmap.height / 3, false)
 				dataForViewPager.add(index, ViewPagerData(predictions, bitmap))
 				runOnUiThread { viewPagerAdapter.notifyItemChanged(index) }
 			}
@@ -103,50 +102,6 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 			runOnUiThread { viewPagerAdapter.notifyItemChanged(2) }
 		}
 	}
-				
-				/*if (frontPath != null) {
-					val customModelInterpreter = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal")
-					val predictions = customModelInterpreter.execute(frontPath).toMutableList()
-					Log.d(TAG, "onCreate: 1: ${predictions.size}")
-					customModelInterpreter.cancel()
-						Log.d(TAG, "onCreate : 1: $frontPath")
-					predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
-					val bitmap = BitmapFactory.decodeFile(Uri.parse(frontPath).path, options)
-					dataForViewPager.add(0, ViewPagerData(predictions, bitmap))
-					runOnUiThread { viewPagerAdapter.notifyItemChanged(0) }
-				}
-				
-				if (whiteLightPath != null) {
-					val customModelInterpreter = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal")
-					val predictions = customModelInterpreter.execute(whiteLightPath).toMutableList()
-					Log.d(TAG, "onCreate: 2: ${predictions.size}")
-					customModelInterpreter.cancel()
-					Log.d(TAG, "onCreate : 2: $frontPath")
-					predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
-					val bitmap = BitmapFactory.decodeFile(Uri.parse(whiteLightPath).path, options)
-					dataForViewPager.add(1, ViewPagerData(predictions, bitmap))
-					runOnUiThread { viewPagerAdapter.notifyItemChanged(1) }
-				}
-				
-				if (backPath != null) {
-					val customModelInterpreter = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal")
-					val predictions = customModelInterpreter.execute(backPath).toMutableList()
-					Log.d(TAG, "onCreate: 3: ${predictions.size}")
-					customModelInterpreter.cancel()
-					Log.d(TAG, "onCreate : 3: $frontPath")
-					predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
-					val bitmap = BitmapFactory.decodeFile(Uri.parse(backPath).path, options)
-					dataForViewPager.add(2, ViewPagerData(predictions, bitmap))
-					runOnUiThread { viewPagerAdapter.notifyItemChanged(2) }
-					isDataReady()
-				}*/
-	
-	private fun isDataReady() {
-		if(dataForViewPager.size == 3) {
-			dataForViewPager.add(3, null)
-			runOnUiThread { viewPagerAdapter.notifyItemChanged(2) }
-		}
-	}
 	
 	
 	
@@ -158,7 +113,8 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 	
 	
 	
-	private fun loadModel(model_path: String, label_path: String, numberOfResults: Int, type: String, imagePath: String) = launch {
+	
+	/*private fun loadModel(model_path: String, label_path: String, numberOfResults: Int, type: String, imagePath: String) = launch {
 		withContext(Dispatchers.IO) {
 			val imageClassification = ImageClassification.create(
 				classifierModel = ClassifierModel.FLOAT,
@@ -221,7 +177,7 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 			runOnUiThread { viewPagerAdapter.notifyItemInserted(3) }
 		}
 		
-	}
+	}*/
 	
 	
 }

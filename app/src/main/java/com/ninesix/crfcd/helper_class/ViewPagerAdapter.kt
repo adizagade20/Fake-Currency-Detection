@@ -46,7 +46,6 @@ class ViewPagerAdapter(private val context: Context, private val dataForViewPage
 			holder as NormalViewHolder
 			holder.recyclerView.setItemViewCacheSize(20)
 			holder.recyclerView.layoutManager = LinearLayoutManager(context)
-			holder.recyclerView.setHasFixedSize(true)
 			val data = dataForViewPager[position]
 			if (data != null) {
 				holder.recyclerView.adapter = ResultAdapter(context, data.predictions, data.bitmap)

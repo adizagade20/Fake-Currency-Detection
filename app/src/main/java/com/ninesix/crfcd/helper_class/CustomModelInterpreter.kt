@@ -1,14 +1,11 @@
 package com.ninesix.crfcd.helper_class
 
-import android.app.ProgressDialog
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.RectF
 import android.net.Uri
 import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.ktx.firestore
@@ -18,23 +15,20 @@ import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions
 import com.google.firebase.ml.modeldownloader.DownloadType
 import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader
 import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers.IO
 import org.tensorflow.lite.Interpreter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.sql.Time
-import java.sql.Timestamp
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import kotlin.collections.ArrayList
 import kotlin.coroutines.CoroutineContext
-import kotlin.system.measureTimeMillis
 
-class CustomModelInterpreter(private val context: Context): CoroutineScope {
+class CustomModelInterpreter : CoroutineScope {
 	
 	private val job = Job()
 	override val coroutineContext: CoroutineContext get() = Dispatchers.Default + job
 	
-	private lateinit var progress: ProgressDialog
 	private var startTime : Long = 0L
 	
 	companion object {
@@ -47,7 +41,7 @@ class CustomModelInterpreter(private val context: Context): CoroutineScope {
 	}
 	
 	
-	suspend fun detailedExecute(imagePaths: ArrayList<String>, modelNames: ArrayList<String>) = CoroutineScope(Dispatchers.IO).async {
+	suspend fun detailedExecute(imagePaths: ArrayList<String>, modelNames: ArrayList<String>) = CoroutineScope(IO).async {
 		onPreExecute()
 		val allPredictions = ArrayList<List<ObjectPrediction>>()
 		for((index, imagePath) in imagePaths.withIndex()) {
@@ -61,7 +55,7 @@ class CustomModelInterpreter(private val context: Context): CoroutineScope {
 	}.await()
 	
 	
-	suspend fun execute(imagePath: String, modelName: String = "MainModel") = CoroutineScope(Dispatchers.IO).async {
+	suspend fun execute(imagePath: String, modelName: String = "MainModel") = CoroutineScope(IO).async {
 		onPreExecute()
 		val interpreter = loadInterpreter(modelName)
 		val labelList = loadLabelList(modelName)
@@ -76,7 +70,7 @@ class CustomModelInterpreter(private val context: Context): CoroutineScope {
 	}
 	
 	
-	private suspend fun loadInterpreter(modelName: String) : Interpreter = withContext(Dispatchers.IO) {
+	private suspend fun loadInterpreter(modelName: String) : Interpreter = withContext(IO) {
 		val done = CountDownLatch(1)
 		var interpreter: Interpreter? = null
 		val conditions = CustomModelDownloadConditions.Builder().build()
@@ -97,7 +91,7 @@ class CustomModelInterpreter(private val context: Context): CoroutineScope {
 	}
 	
 	
-	private suspend fun doInBackground(imagePath: String, interpreter: Interpreter, labelList: ArrayList<String>): List<ObjectPrediction> = withContext(Dispatchers.IO) {
+	private suspend fun doInBackground(imagePath: String, interpreter: Interpreter, labelList: ArrayList<String>): List<ObjectPrediction> = withContext(IO) {
 		
 		var bitmap = BitmapFactory.decodeFile(Uri.parse(imagePath).path)
 		bitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, false)
@@ -166,11 +160,11 @@ class CustomModelInterpreter(private val context: Context): CoroutineScope {
 	
 	
 	private fun onPostExecute() {
-		Log.d(TAG, "onPostExecute: EXECUTION TOOK ${(System.currentTimeMillis() - startTime).toFloat()/1000} seconds")
+		Log.d(TAG, "onPostExecute: EXECUTION TOOK ${(System.currentTimeMillis() - startTime).toFloat()/1000f} seconds")
 	}
 	
 	
-	private suspend fun loadLabelList(modelName: String) = withContext(Dispatchers.IO) {
+	private suspend fun loadLabelList(modelName: String) = withContext(IO) {
 		val done = CountDownLatch(1)
 		val labelList = ArrayList<String>()
 		labelList.add("???")

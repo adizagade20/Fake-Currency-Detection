@@ -3,7 +3,6 @@ package com.ninesix.crfcd
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
@@ -11,17 +10,15 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.*
 import android.graphics.drawable.ColorDrawable
-import android.media.Image
 import android.net.Uri
-import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
+import android.view.*
 import android.view.View.OnTouchListener
-import android.view.ViewTreeObserver
 import android.widget.*
+import android.widget.AdapterView
+import android.widget.AdapterView.OnItemSelectedListener
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -29,15 +26,13 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.ninesix.crfcd.databinding.ActivityMainBinding
-import com.ninesix.crfcd.helper_class.ClassifierModel
 import com.ninesix.crfcd.helper_class.CustomModelInterpreter
-import com.ninesix.crfcd.helper_class.ImageClassification
-import com.ninesix.crfcd.helper_class.ModelLabelHelper
 import kotlinx.coroutines.*
 import java.io.*
 import java.text.SimpleDateFormat
@@ -62,9 +57,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	
 	//---------------------------------------------------------------------------------------- VARIABLES ----------------------------------------------------------------------------------------//
 	private val job = Job()
-	override val coroutineContext: CoroutineContext get() = job + Dispatchers.Default
+	override val coroutineContext: CoroutineContext get() = Dispatchers.Default + job
 	
-	private var progress: ProgressDialog? = null
 	private var width: Int = 0
 	private var height: Int = 0
 	private var focusOverlayTimer: TimerTask? = null
@@ -76,7 +70,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	private lateinit var imageCapture: ImageCapture
 	
 	private lateinit var executor: ExecutorService
-	private lateinit var bitmap: Bitmap
 	private lateinit var cameraProvider: ProcessCameraProvider
 	
 	private lateinit var camera: androidx.camera.core.Camera
@@ -85,27 +78,29 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	
 	
 	//----------------------------- BLUETOOTH -----------------------------//
-	private lateinit var labelForDetailedDetection: String
 	private val myUUID: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
 	private var bluetoothSocket: BluetoothSocket? = null
 	private var isBluetoothConnected = false
 	private var bluetoothAdapter: BluetoothAdapter? = null
-	private lateinit var asyncTask: AsyncTask<Void, Void, Void>
 	private lateinit var connectBluetooth: ConnectBluetooth
 	lateinit var address: String
 	
 	
 	//----------------------------- OBJECT DETECTION -----------------------------//
-	private lateinit var imageClassification: ImageClassification
+//	private lateinit var imageClassification: ImageClassification
 	
 	
 	//----------------------------- OBJECTS -----------------------------//
-	private val modelLabelHelper = ModelLabelHelper()
+//	private val modelLabelHelper = ModelLabelHelper()
 	private lateinit var binding: ActivityMainBinding
 	
 	
 	//----------------------------- OCR -----------------------------//
 	private lateinit var recognizer: TextRecognizer
+	
+	
+	
+	
 	
 	
 	//----------------------------- ON CREATE -----------------------------//
@@ -116,10 +111,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		binding = ActivityMainBinding.inflate(layoutInflater)
 		setContentView(binding.root)
 		
+		setSupportActionBar(binding.mainToolbarInclude.materialToolbar)
+		
 //		bluetoothListAlertBox()
 		
 		onCreateContinued()
-		
 	}
 	
 	private fun onCreateContinued() {
@@ -197,12 +193,13 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 			}
 		}
 		
+		
 	}
 	
 	
 	//----------------------------- BLUETOOTH -----------------------------//
+	
 	private fun bluetoothListAlertBox() {
-		binding.mainToolbarInclude.bluetoothStatusToolbarIv.setImageResource(R.drawable.bluetooth_disabled)
 		
 		val rootView: View = LayoutInflater.from(applicationContext).inflate(R.layout.layout_paired_devices, null)
 		
@@ -210,7 +207,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		builder.setView(rootView)
 		val alert = builder.create()
 		alert.setCancelable(false)
-		alert.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+		alert.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 		alert.show()
 		
 		val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
@@ -283,6 +280,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	}
 	
 	
+//************************************************************************************* BINDING CAMERA USE CASES *************************************************************************************//
+	
 	@SuppressLint("UnsafeExperimentalUsageError", "ClickableViewAccessibility")
 	private fun startCamera() {
 		binding.imageTypeTextView.text = IMAGE_TYPE[0]
@@ -290,18 +289,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 		
 		cameraProviderFuture.addListener({
-			// Used to bind the lifecycle of cameras to the lifecycle owner
 			cameraProvider = cameraProviderFuture.get()
 			
-			
-			// Preview
 			val preview = Preview.Builder()
 				.setTargetAspectRatio(AspectRatio.RATIO_4_3)
 				.setTargetRotation(binding.viewFinder.display.rotation)
 				.build()
 				.also { it.setSurfaceProvider(binding.viewFinder.surfaceProvider) }
 			
-			// Select back camera as a default
 			val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 			
 			imageAnalysis = ImageAnalysis.Builder()
@@ -359,10 +354,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 					.enableMultipleObjects()
 					.build()
 				val objectDetector = ObjectDetection.getClient(options)*/
-
-//				CoroutineScope(Dispatchers.IO).launch {
-//					val predictions = CustomModelInterpreter(applicationContext, "100NewFrontNormal", progress).execute(bitmap)
-//				}
 				
 				val mediaImage = imageProxy.image
 				
@@ -482,7 +473,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 					"front" -> {
 						binding.imageTypeTextView.text = IMAGE_TYPE[1]
 						CoroutineScope(Dispatchers.IO).launch {
-							val customModelInterpreter = CustomModelInterpreter(this@MainActivity)
+							val customModelInterpreter = CustomModelInterpreter()
 							val predictions = customModelInterpreter.execute(savedUri.toString())
 							customModelInterpreter.cancel()
 						}
@@ -516,8 +507,81 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	
 	
 	
+//********************************************************************************** BLUETOOTH CONNECTION COROUTINE **********************************************************************************//
+
+	private inner class ConnectBluetooth(private val mainLayout: ConstraintLayout) : CoroutineScope {
+		val job = Job()
+		override val coroutineContext: CoroutineContext get() = Dispatchers.Main + job
+		
+		private var connectSuccess: Boolean = true
+		
+		fun cancel() {
+			job.cancel()
+		}
+		
+		fun execute() = launch {
+			onPreExecute()
+			doInBackground()
+			onPostExecute()
+		}
+		
+		private suspend fun doInBackground() = withContext(Dispatchers.IO) {
+			try {
+				if (this@MainActivity.bluetoothSocket == null || !this@MainActivity.isBluetoothConnected) {
+					this@MainActivity.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+					val bluetoothDevice: BluetoothDevice = this@MainActivity.bluetoothAdapter!!.getRemoteDevice(this@MainActivity.address)
+//					this@MainActivity.bluetoothSocket = bluetoothDevice.createInsecureRfcommSocketToServiceRecord(this@MainActivity.myUUID)
+					this@MainActivity.bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(this@MainActivity.myUUID)
+					BluetoothAdapter.getDefaultAdapter().cancelDiscovery()
+					this@MainActivity.bluetoothSocket!!.connect()
+				}
+			} catch (e: IOException) {
+				connectSuccess = false
+			}
+			return@withContext
+		}
+		
+		private fun onPreExecute() {
+//			this@MainActivity.progress = ProgressDialog.show(this@MainActivity, "Connecting...", "Please wait !!!")
+		}
+		
+		private fun onPostExecute() {
+			if (connectSuccess) {
+				Log.d(TAG, "onPostExecute: Connected.")
+				this@MainActivity.isBluetoothConnected = true
+			} else {
+				Log.d(TAG, "onPostExecute: Connection Failed. Is it a SPP Bluetooth? Try again.")
+				val snackBar = Snackbar.make(mainLayout, "Connection Failed. Is it a SPP Bluetooth?", Snackbar.LENGTH_INDEFINITE)
+				snackBar.animationMode = Snackbar.ANIMATION_MODE_SLIDE
+				snackBar.setAction("Retry") {
+					bluetoothListAlertBox()
+				}
+				snackBar.show()
+			}
+//			this@MainActivity.progress!!.dismiss()
+		}
+		
+	}
 	
+}
+
+
+
+
+
+//****************************************************************************************** OLD INTERPRETER *****************************************************************************************//
 	
+	/*private fun loadModule() = launch {
+		withContext(Dispatchers.IO) {
+			imageClassification = ImageClassification.create(
+				classifierModel = ClassifierModel.FLOAT,
+				assetManager = assets,
+				modelPath = "all.tflite",
+				labelPath = "all.txt",
+				numberOfResults = 1
+			)
+		}
+	}
 	
 	private fun Image.toBitmap(): Bitmap {
 		val yBuffer = planes[0].buffer // Y
@@ -561,88 +625,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		labelForDetailedDetection = "rs_100_n_f"
 		
 		val label = "${modelLabelHelper.getLabelPrimaryPrediction(predictions.await()[0].label)} : ${(predictions.await()[0].score * 100).toInt()} %"
-		
-	}
+	}*/
 	
-	private fun loadModule() = launch {
-		withContext(Dispatchers.IO) {
-			imageClassification = ImageClassification.create(
-				classifierModel = ClassifierModel.FLOAT,
-				assetManager = assets,
-				modelPath = "all.tflite",
-				labelPath = "all.txt",
-				numberOfResults = 1
-			)
-		}
-	}
-	
-	
-	
-	
-	
-	
-	private inner class ConnectBluetooth(private val mainLayout: ConstraintLayout) : CoroutineScope {
-		val job = Job()
-		override val coroutineContext: CoroutineContext get() = Dispatchers.Main + job
-		
-		private var connectSuccess: Boolean = true
-		
-		fun cancel() {
-			job.cancel()
-		}
-		
-		fun execute() = launch {
-			onPreExecute()
-			val result = doInBackground()
-			onPostExecute(result)
-		}
-		
-		private suspend fun doInBackground(): String = withContext(Dispatchers.IO) {
-			try {
-				if (this@MainActivity.bluetoothSocket == null || !this@MainActivity.isBluetoothConnected) {
-					this@MainActivity.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-					val dispositivo: BluetoothDevice = this@MainActivity.bluetoothAdapter!!.getRemoteDevice(this@MainActivity.address)
-//					this@MainActivity.bluetoothSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(this@MainActivity.myUUID)
-					this@MainActivity.bluetoothSocket = dispositivo.createRfcommSocketToServiceRecord(this@MainActivity.myUUID)
-					BluetoothAdapter.getDefaultAdapter().cancelDiscovery()
-					this@MainActivity.bluetoothSocket!!.connect()
-				}
-			} catch (e: IOException) {
-				connectSuccess = false
-			}
-			return@withContext "Success"
-		}
-		
-		private fun onPreExecute() {
-			this@MainActivity.progress = ProgressDialog.show(this@MainActivity, "Connecting...", "Please wait !!!")
-		}
-		
-		private fun onPostExecute(result: String) {
-			if (connectSuccess) {
-				Log.d(TAG, "onPostExecute: Connected.")
-				this@MainActivity.isBluetoothConnected = true
-				binding.mainToolbarInclude.bluetoothStatusToolbarIv.setImageResource(R.drawable.bluetooth_connected)
-			} else {
-				Log.d(TAG, "onPostExecute: Connection Failed. Is it a SPP Bluetooth? Try again.")
-				val snackBar = Snackbar.make(mainLayout, "Connection Failed. Is it a SPP Bluetooth?", Snackbar.LENGTH_INDEFINITE)
-				snackBar.animationMode = Snackbar.ANIMATION_MODE_SLIDE
-				snackBar.setAction("Retry") {
-					bluetoothListAlertBox()
-				}
-				snackBar.show()
-			}
-			this@MainActivity.progress!!.dismiss()
-		}
-		
-	}
-	
-	
-	
-}
 
-//************************************************************************************** BLUETOOTH USING ASYNC TASK **************************************************************************************//
+//************************************************************************************ BLUETOOTH USING ASYNC TASK ************************************************************************************//
 
-/*	@SuppressLint("StaticFieldLeak")
+	/*	@SuppressLint("StaticFieldLeak")
 	private inner class ConnectBT : AsyncTask<Void, Void, Void>() {
 		
 		private var connectSuccess: Boolean = true
@@ -687,10 +675,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	}*/
 
 
-
 //************************************************************************************** TESSERACT OCR WORKING **************************************************************************************//
 
-/*implementation 'com.rmtheis:tess-two:9.0.0'
+	/*implementation 'com.rmtheis:tess-two:9.0.0'
 
 private var mTess: TessBaseAPI? = null
 private lateinit var datapath : String
@@ -759,7 +746,7 @@ private fun copyFiles(datapath: String, language: String) {
 
 //************************************************************************************ TESSERACT OCR NOT WORKING ************************************************************************************//
 
-/*private fun prepareDirectory(path: String) {
+	/*private fun prepareDirectory(path: String) {
 val dir = File(path)
 if (!dir.exists()) {
 	if (!dir.mkdirs()) {
