@@ -21,21 +21,21 @@ import kotlinx.coroutines.*
 import org.tensorflow.lite.Interpreter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.sql.Time
+import java.sql.Timestamp
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import kotlin.collections.ArrayList
 import kotlin.coroutines.CoroutineContext
+import kotlin.system.measureTimeMillis
 
-class CustomModelInterpreter(private val context: Context, private val modelName: String): CoroutineScope {
+class CustomModelInterpreter(private val context: Context): CoroutineScope {
 	
 	private val job = Job()
 	override val coroutineContext: CoroutineContext get() = Dispatchers.Default + job
 	
-	private val labelList = ArrayList<String>()
-	private var numberOfResults: Int = 0
-	
-	private var interpreter: Interpreter ?= null
 	private lateinit var progress: ProgressDialog
+	private var startTime : Long = 0L
 	
 	companion object {
 		private const val TAG = "CustomModelInterpreter"
@@ -47,32 +47,38 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 	}
 	
 	
-	/*fun detailedExecute(imagePath1: String, imagePath2: String, imagePath3: String) = CoroutineScope(Dispatchers.IO).async {
-		loadLabelList()
+	suspend fun detailedExecute(imagePaths: ArrayList<String>, modelNames: ArrayList<String>) = CoroutineScope(Dispatchers.IO).async {
 		onPreExecute()
-		return@async doInBackground(imagePath)
-	}*/
-	
-	
-	suspend fun execute(imagePath: String) = CoroutineScope(Dispatchers.IO).async {
-		onPreExecute()
-		if(interpreter == null) {
-			loadInterpreter()
-			loadLabelList()
+		val allPredictions = ArrayList<List<ObjectPrediction>>()
+		for((index, imagePath) in imagePaths.withIndex()) {
+			modelNames[index] = "100NewFrontNormal"
+			val interpreter = loadInterpreter(modelNames[index])
+			val labelList = loadLabelList(modelNames[index])
+			allPredictions.add(index, doInBackground(imagePath, interpreter,  labelList))
 		}
-		return@async doInBackground(imagePath)
+		onPostExecute()
+		return@async allPredictions
+	}.await()
+	
+	
+	suspend fun execute(imagePath: String, modelName: String = "MainModel") = CoroutineScope(Dispatchers.IO).async {
+		onPreExecute()
+		val interpreter = loadInterpreter(modelName)
+		val labelList = loadLabelList(modelName)
+		val predictions = doInBackground(imagePath, interpreter, labelList)
+		onPostExecute()
+		return@async predictions
 	}.await()
 	
 	
 	private fun onPreExecute() {
-		(context as AppCompatActivity).runOnUiThread {
-			progress = ProgressDialog.show(context, "Analysing", "Please wait, if model is not available locally, will download it first")
-		}
+		startTime = System.currentTimeMillis()
 	}
 	
 	
-	private suspend fun loadInterpreter(): String = withContext(Dispatchers.IO) {
+	private suspend fun loadInterpreter(modelName: String) : Interpreter = withContext(Dispatchers.IO) {
 		val done = CountDownLatch(1)
+		var interpreter: Interpreter? = null
 		val conditions = CustomModelDownloadConditions.Builder().build()
 		FirebaseModelDownloader.getInstance()
 			.getModel(modelName, DownloadType.LOCAL_MODEL_UPDATE_IN_BACKGROUND, conditions)
@@ -84,15 +90,14 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 				if (modelFile != null) {
 					interpreter = Interpreter(modelFile)
 					done.countDown()
-					progress.dismiss()
 				}
 			}
 		done.await()
-		return@withContext "Success"
+		return@withContext interpreter!!
 	}
 	
 	
-	private suspend fun doInBackground(imagePath: String): List<ObjectPrediction> = withContext(Dispatchers.IO) {
+	private suspend fun doInBackground(imagePath: String, interpreter: Interpreter, labelList: ArrayList<String>): List<ObjectPrediction> = withContext(Dispatchers.IO) {
 		
 		var bitmap = BitmapFactory.decodeFile(Uri.parse(imagePath).path)
 		bitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, false)
@@ -128,6 +133,8 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 								input[batchNum][x][y][1] = (Color.green(pixel) - 127) / 128.0f;
 								input[batchNum][x][y][2] = (Color.blue(pixel) - 127) / 128.0f;*/
 		
+		val numberOfResults = labelList.size - 1
+		
 		val locations = arrayOf(Array(numberOfResults) { FloatArray(4) })
 		val labelIndices =  arrayOf(FloatArray(numberOfResults))
 		val scores =  arrayOf(FloatArray(numberOfResults))
@@ -135,7 +142,11 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 		
 		Log.d(TAG, "doInBackground: $input")
 		
-		interpreter?.runForMultipleInputsOutputs(arrayOf(input), outputBuffer)
+		try {
+			interpreter.runForMultipleInputsOutputs(arrayOf(input), outputBuffer)
+		} catch (e : Exception) {
+			Log.e(TAG, "doInBackground: ${e.localizedMessage} \n ${e.stackTrace}")
+		}
 		
 		val predictions = (0 until numberOfResults).map { it ->
 			ObjectPrediction(location = locations[0][it].let {                   // The locations are an array of [0, 1] floats for [top, left, bottom, right]
@@ -148,13 +159,20 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 			)
 		}
 		
-		interpreter?.close()
+		interpreter.close()
 		
 		return@withContext predictions
 	}
 	
 	
-	private fun loadLabelList() {
+	private fun onPostExecute() {
+		Log.d(TAG, "onPostExecute: EXECUTION TOOK ${(System.currentTimeMillis() - startTime).toFloat()/1000} seconds")
+	}
+	
+	
+	private suspend fun loadLabelList(modelName: String) = withContext(Dispatchers.IO) {
+		val done = CountDownLatch(1)
+		val labelList = ArrayList<String>()
 		labelList.add("???")
 		val db = Firebase.firestore
 		
@@ -166,13 +184,10 @@ class CustomModelInterpreter(private val context: Context, private val modelName
 				snapshot.data?.forEach {
 					labelList.add(it.value as String)
 				}
-				Log.d(TAG, "loadLabelList: $labelList")
+				done.countDown()
 			}
-			.addOnCompleteListener {
-				if (it.isSuccessful) {
-					numberOfResults = labelList.size - 1
-				}
-			}
+		done.await()
+		return@withContext labelList
 	}
 	
 }

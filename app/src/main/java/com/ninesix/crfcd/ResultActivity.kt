@@ -51,11 +51,6 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 		
 		viewPagerAdapter = ViewPagerAdapter(this, dataForViewPager)
 		
-//		dataForViewPager.add(0, null)
-//		dataForViewPager.add(1, null)
-//		dataForViewPager.add(2, null)
-//		dataForViewPager.add(3, null)
-		
 		viewPager2.adapter = viewPagerAdapter
 		
 		TabLayoutMediator(tabLayout, viewPager2) { tab, position ->
@@ -79,63 +74,77 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 		backPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/2021-04-01-11-11-08-752.jpg"
 		
 		
-		
-//		val data = ModelLabelHelper().getModelAndLabelFileName("rs_100_n_f")
-//		Timer().schedule(0) { loadModel(data[0], data[1], data[2].toInt(), "normal", "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/2021-03-13-23-07-23-971.jpg") }
-//		Timer().schedule(1000) { loadModel(data[3], data[4], data[5].toInt(), "white", "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/2021-03-11-13-15-43-980.jpg") }
-//		Timer().schedule(2000) { loadModel(data[6], data[7], data[8].toInt(), "uv", "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/2021-03-13-14-05-24-703.jpg") }
-
-//		val data = modelLabel?.let { ModelLabelHelper().getModelAndLabelFileName(it) }
-//		Timer().schedule(0) {
-		
 		val options = BitmapFactory.Options()
 		options.inMutable = true
 		
+		val imagePaths = ArrayList<String>()
+		imagePaths.add(frontPath)
+		imagePaths.add(whiteLightPath)
+		imagePaths.add(backPath)
+		val modelNames = ArrayList<String>()
+		modelNames.add(modelName + "FrontNormal")
+		modelNames.add(modelName + "WhiteLight")
+		modelNames.add(modelName + "WhiteLight")
+		
+		Log.d(TAG, "onCreate: $imagePaths \n$modelNames")
+		
 		CoroutineScope(Dispatchers.IO).launch {
-			if (frontPath != null) {
-				val predictions = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal").execute(frontPath).toMutableList()
-				Log.d(TAG, "onCreate: 0: ${predictions.size}")
+			val customModelInterpreter = CustomModelInterpreter(this@ResultActivity)
+			val allPredictions = customModelInterpreter.detailedExecute(imagePaths, modelNames)
+			for ((index, data) in allPredictions.withIndex()) {
+				val predictions = data.toMutableList()
+				Log.d(TAG, "onCreate: ${predictions.size}")
 				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
 				val bitmap = BitmapFactory.decodeFile(Uri.parse(frontPath).path, options)
-				dataForViewPager.add(0, ViewPagerData(predictions, bitmap))
-				runOnUiThread { viewPagerAdapter.notifyItemChanged(0) }
-				isDataReady()
+				dataForViewPager.add(index, ViewPagerData(predictions, bitmap))
+				runOnUiThread { viewPagerAdapter.notifyItemChanged(index) }
 			}
-			
-			if (whiteLightPath != null) {
-				val predictions = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal").execute(whiteLightPath).toMutableList()
-				Log.d(TAG, "onCreate: 1: ${predictions.size}")
-				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
-				val bitmap = BitmapFactory.decodeFile(Uri.parse(whiteLightPath).path, options)
-				dataForViewPager.add(1, ViewPagerData(predictions, bitmap))
-				runOnUiThread { viewPagerAdapter.notifyItemChanged(1) }
-				isDataReady()
-			}
-			
-			if (backPath != null) {
-				val predictions = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal").execute(backPath).toMutableList()
-				Log.d(TAG, "onCreate: 2: ${predictions.size}")
-				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
-				val bitmap = BitmapFactory.decodeFile(Uri.parse(backPath).path, options)
-				dataForViewPager.add(2, ViewPagerData(predictions, bitmap))
-				runOnUiThread { viewPagerAdapter.notifyItemChanged(2) }
-				isDataReady()
-			}
+			dataForViewPager.add(3, null)
+			runOnUiThread { viewPagerAdapter.notifyItemChanged(2) }
 		}
 	}
-	
+				
+				/*if (frontPath != null) {
+					val customModelInterpreter = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal")
+					val predictions = customModelInterpreter.execute(frontPath).toMutableList()
+					Log.d(TAG, "onCreate: 1: ${predictions.size}")
+					customModelInterpreter.cancel()
+						Log.d(TAG, "onCreate : 1: $frontPath")
+					predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
+					val bitmap = BitmapFactory.decodeFile(Uri.parse(frontPath).path, options)
+					dataForViewPager.add(0, ViewPagerData(predictions, bitmap))
+					runOnUiThread { viewPagerAdapter.notifyItemChanged(0) }
+				}
+				
+				if (whiteLightPath != null) {
+					val customModelInterpreter = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal")
+					val predictions = customModelInterpreter.execute(whiteLightPath).toMutableList()
+					Log.d(TAG, "onCreate: 2: ${predictions.size}")
+					customModelInterpreter.cancel()
+					Log.d(TAG, "onCreate : 2: $frontPath")
+					predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
+					val bitmap = BitmapFactory.decodeFile(Uri.parse(whiteLightPath).path, options)
+					dataForViewPager.add(1, ViewPagerData(predictions, bitmap))
+					runOnUiThread { viewPagerAdapter.notifyItemChanged(1) }
+				}
+				
+				if (backPath != null) {
+					val customModelInterpreter = CustomModelInterpreter(this@ResultActivity, "100NewFrontNormal")
+					val predictions = customModelInterpreter.execute(backPath).toMutableList()
+					Log.d(TAG, "onCreate: 3: ${predictions.size}")
+					customModelInterpreter.cancel()
+					Log.d(TAG, "onCreate : 3: $frontPath")
+					predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
+					val bitmap = BitmapFactory.decodeFile(Uri.parse(backPath).path, options)
+					dataForViewPager.add(2, ViewPagerData(predictions, bitmap))
+					runOnUiThread { viewPagerAdapter.notifyItemChanged(2) }
+					isDataReady()
+				}*/
 	
 	private fun isDataReady() {
-		var isReady = true
-		for(i in 0 until dataForViewPager.size) {
-			if(dataForViewPager[i] != null) {
-				isReady = false
-			}
-		}
-		if(isReady) {
-			runOnUiThread {
-				viewPagerAdapter.notifyItemChanged(3)
-			}
+		if(dataForViewPager.size == 3) {
+			dataForViewPager.add(3, null)
+			runOnUiThread { viewPagerAdapter.notifyItemChanged(2) }
 		}
 	}
 	

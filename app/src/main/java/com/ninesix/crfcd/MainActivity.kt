@@ -482,8 +482,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 					"front" -> {
 						binding.imageTypeTextView.text = IMAGE_TYPE[1]
 						CoroutineScope(Dispatchers.IO).launch {
-							val predictions = CustomModelInterpreter(this@MainActivity, "100NewFrontNormal").execute(savedUri.toString())
-							Log.d(TAG, "onImageSaved: $predictions")
+							val customModelInterpreter = CustomModelInterpreter(this@MainActivity)
+							val predictions = customModelInterpreter.execute(savedUri.toString())
+							customModelInterpreter.cancel()
 						}
 					}
 					"WL" -> {
@@ -491,7 +492,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 					}
 					"back" -> {
 						cameraProvider.unbindAll()
-//						asyncTask.cancel(true)
 						connectBluetooth.cancel()
 						bluetoothSocket?.close()
 						
