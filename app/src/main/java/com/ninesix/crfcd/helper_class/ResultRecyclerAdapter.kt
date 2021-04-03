@@ -23,7 +23,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 
 
-class ResultAdapter(private val context: Context, private val predictions: MutableList<ObjectPrediction>, private val bitmap: Bitmap) : RecyclerView.Adapter<ViewHolder>(), CoroutineScope {
+class ResultRecyclerAdapter(private val context: Context, private val predictions: MutableList<ObjectPrediction>, private val bitmap: Bitmap) : RecyclerView.Adapter<ViewHolder>(), CoroutineScope {
 	
 	private val job = Job()
 	override val coroutineContext: CoroutineContext get() = job + Dispatchers.Default
@@ -142,9 +142,9 @@ class ResultAdapter(private val context: Context, private val predictions: Mutab
 	}
 	
 	
-	class ViewHolderOne(val binding: LayoutResultRecyclerBinding) : RecyclerView.ViewHolder(binding.root)
+	private inner class ViewHolderOne(val binding: LayoutResultRecyclerBinding) : RecyclerView.ViewHolder(binding.root)
 	
 	
-	class ViewHolderTwo(val binding: LayoutResultRecyclerFirstTileBinding) : RecyclerView.ViewHolder(binding.root)
+	private inner class ViewHolderTwo(val binding: LayoutResultRecyclerFirstTileBinding) : RecyclerView.ViewHolder(binding.root)
 	
 }

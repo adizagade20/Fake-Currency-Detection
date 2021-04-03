@@ -33,7 +33,7 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 	
 	
 	//----------------------------- VIEWPAGER / TAB LAYOUT -----------------------------//
-	private lateinit var viewPagerAdapter: ViewPagerAdapter
+	private lateinit var viewPagerAdapter: ResultViewPagerAdapter
 	private val dataForViewPager = ArrayList<ViewPagerData?>()
 	
 	
@@ -49,7 +49,7 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 		viewPager2 = findViewById(R.id.viewPager2)
 		tabLayout = findViewById(R.id.tabLayout)
 		
-		viewPagerAdapter = ViewPagerAdapter(this, dataForViewPager)
+		viewPagerAdapter = ResultViewPagerAdapter(this, dataForViewPager)
 		
 		viewPager2.adapter = viewPagerAdapter
 		
@@ -64,7 +64,7 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 		tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 		
 		
-		val modelName = intent.getStringExtra("modelName")
+		val modelName = intent.getStringExtra("currency")
 		var frontPath = intent.getStringExtra("front")
 		var whiteLightPath = intent.getStringExtra("WL")
 		var backPath = intent.getStringExtra("back")

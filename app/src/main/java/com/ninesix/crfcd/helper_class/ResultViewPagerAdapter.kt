@@ -16,13 +16,13 @@ import com.github.mikephil.charting.interfaces.datasets.IBarDataSet
 import com.ninesix.crfcd.R
 import kotlin.collections.ArrayList
 
-class ViewPagerAdapter(private val context: Context, private val dataForViewPager: ArrayList<ViewPagerData?>): RecyclerView.Adapter<ViewHolder>(){
+class ResultViewPagerAdapter(private val context: Context, private val dataForViewPager: ArrayList<ViewPagerData?>): RecyclerView.Adapter<ViewHolder>(){
 	
 	companion object {
 		private const val TAG = "ViewPagerAdapter"
 	}
 	
-	
+
 	override fun getItemViewType(position: Int): Int {
 		return if (dataForViewPager[position] != null) 0 else 1
 	}
@@ -31,7 +31,7 @@ class ViewPagerAdapter(private val context: Context, private val dataForViewPage
 	override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
 		return if (viewType == 0) {
 			val inflater = LayoutInflater.from(parent.context)
-			val view = inflater.inflate(R.layout.layout_view_pager_item, parent, false)
+			val view = inflater.inflate(R.layout.layout_result_view_pager_item, parent, false)
 			NormalViewHolder(view)
 		} else {
 			val inflater = LayoutInflater.from(parent.context)
@@ -48,7 +48,7 @@ class ViewPagerAdapter(private val context: Context, private val dataForViewPage
 			holder.recyclerView.layoutManager = LinearLayoutManager(context)
 			val data = dataForViewPager[position]
 			if (data != null) {
-				holder.recyclerView.adapter = ResultAdapter(context, data.predictions, data.bitmap)
+				holder.recyclerView.adapter = ResultRecyclerAdapter(context, data.predictions, data.bitmap)
 			}
 		} else {
 			holder as FinalTabViewHolder

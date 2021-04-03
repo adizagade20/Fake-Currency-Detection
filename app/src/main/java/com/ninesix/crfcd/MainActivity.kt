@@ -12,13 +12,12 @@ import android.graphics.*
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.text.Html
 import android.util.Log
 import android.view.*
 import android.view.View.OnTouchListener
 import android.widget.*
 import android.widget.AdapterView
-import android.widget.AdapterView.OnItemSelectedListener
-import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -26,13 +25,15 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import com.google.android.material.navigation.NavigationView
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.ninesix.crfcd.databinding.ActivityMainBinding
+import com.ninesix.crfcd.databinding.LayoutMainCurrencyChooserBinding
 import com.ninesix.crfcd.helper_class.CustomModelInterpreter
+import com.ninesix.crfcd.helper_class.MainCurrencyChooserAdapter
 import kotlinx.coroutines.*
 import java.io.*
 import java.text.SimpleDateFormat
@@ -114,8 +115,15 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		setSupportActionBar(binding.mainToolbarInclude.materialToolbar)
 		
 //		bluetoothListAlertBox()
+
+//		onCreateContinued()
 		
-		onCreateContinued()
+		val intent = Intent(this@MainActivity, ResultActivity::class.java)
+		intent.putExtra("NormalImage", imageUriList["front"])
+		intent.putExtra("WhiteLightImage", imageUriList["WL"])
+		intent.putExtra("UVLightImage", imageUriList["back"])
+		
+		getModelNameFromUser("Rs. 100 New", intent)
 	}
 	
 	private fun onCreateContinued() {
@@ -197,11 +205,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	}
 	
 	
-	//----------------------------- BLUETOOTH -----------------------------//
+//--------------------------------------------------------------------------------------------- BLUETOOTH --------------------------------------------------------------------------------------------//
 	
 	private fun bluetoothListAlertBox() {
 		
-		val rootView: View = LayoutInflater.from(applicationContext).inflate(R.layout.layout_paired_devices, null)
+		val rootView: View = LayoutInflater.from(applicationContext).inflate(R.layout.layout_main_bluetooth_list_view, null)
 		
 		val builder = AlertDialog.Builder(this)
 		builder.setView(rootView)
@@ -212,7 +220,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		
 		val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
 		
-		val listView: ListView = rootView.findViewById(R.id.listView)
+		val listView: ListView = rootView.findViewById(R.id.alert_box_list_view)
 		
 		if (bluetoothAdapter == null) {
 			Toast.makeText(applicationContext, "Bluetooth device not available", Toast.LENGTH_LONG).show()
@@ -434,6 +442,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 			mediaDir else filesDir
 	}
 	
+	
 	private fun takePhoto(isBTReady: Boolean, imageType: String) {
 		if (!isBTReady) {
 			isCaptureInProgress = false
@@ -486,20 +495,36 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 						connectBluetooth.cancel()
 						bluetoothSocket?.close()
 						
-						Timer().schedule(1000) {
-							recognizer.close()
-							val intent = Intent(this@MainActivity, ResultActivity::class.java)
-							intent.putExtra("NormalImage", imageUriList["front"])
-							intent.putExtra("WhiteLightImage", imageUriList["WL"])
-							intent.putExtra("UVLightImage", imageUriList["back"])
-							intent.putExtra("modelName", "100NewFront")
-							startActivity(intent)
-						}
+						recognizer.close()
+						val intent = Intent(this@MainActivity, ResultActivity::class.java)
+						intent.putExtra("NormalImage", imageUriList["front"])
+						intent.putExtra("WhiteLightImage", imageUriList["WL"])
+						intent.putExtra("UVLightImage", imageUriList["back"])
+						getModelNameFromUser("Rs. 100 New", intent)
 					}
 				}
 			}
 		})
 	}
+	
+	
+	
+	private fun getModelNameFromUser(currency: String, intent: Intent) {
+		val rootBinding = LayoutMainCurrencyChooserBinding.inflate(layoutInflater)
+		
+		rootBinding.mainCurrencyChooserRecycler.layoutManager = LinearLayoutManager(this)
+		rootBinding.mainCurrencyChooserTextView.text = Html.fromHtml("According to the system, given note is of <u><b>$currency</u></b>, but final call will be yours")
+		rootBinding.mainCurrencyChooserRecycler.adapter = MainCurrencyChooserAdapter(this, currency, intent)
+		
+		val builder = AlertDialog.Builder(this)
+		builder.setView(rootBinding.root)
+		val alert = builder.create()
+		alert.setCancelable(false)
+		alert.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+		alert.show()
+	}
+	
+	
 	
 	private fun processOCRResult(text: String) {
 //		Log.d(TAG, "processOCRResult: $text")
@@ -564,8 +589,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	}
 	
 }
-
-
 
 
 

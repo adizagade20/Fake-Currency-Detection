@@ -44,7 +44,7 @@
 
 			<include
 				android:id="@+id/focus_overlay_include"
-				layout="@layout/layout_focus_overlay"
+				layout="@layout/layout_main_focus_overlay"
 				app:layout_constraintBottom_toBottomOf="@id/viewFinder"
 				app:layout_constraintLeft_toLeftOf="@id/viewFinder"
 				app:layout_constraintRight_toRightOf="@id/viewFinder"
@@ -66,7 +66,7 @@
 
 			<include
 				android:id="@+id/camera_overlay_include"
-				layout="@layout/layout_camera_overlay"
+				layout="@layout/layout_main_camera_overlay"
 				app:layout_constraintBottom_toBottomOf="parent"
 				app:layout_constraintLeft_toLeftOf="parent"
 				app:layout_constraintRight_toRightOf="parent"
@@ -76,7 +76,7 @@
 
 		<include
 			android:id="@+id/camera_controls"
-			layout="@layout/layout_camera_controls"
+			layout="@layout/layout_main_camera_controls"
 			app:layout_constraintBottom_toBottomOf="parent"
 			app:layout_constraintLeft_toLeftOf="parent"
 			app:layout_constraintRight_toRightOf="parent"

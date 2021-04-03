@@ -7,8 +7,9 @@
 	<color name="teal_700">#FF018786</color>
 	<color name="black">#FF000000</color>
 	<color name="white">#FFFFFFFF</color>
+
 	<color name="gray">#90808080</color>
-	<color name="holo_blue_dark">#ff0099cc</color>
-	<color name="holo_green_dark">#ff669900</color>
-	<color name="holo_red_dark">#ffcc0000</color>
+<!--	<color name="holo_blue_dark">#ff0099cc</color>-->
+<!--	<color name="holo_green_dark">#ff669900</color>-->
+<!--	<color name="holo_red_dark">#ffcc0000</color>-->
 </resources>

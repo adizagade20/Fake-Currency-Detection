@@ -32,7 +32,7 @@ class ConnectDeviceActivity : AppCompatActivity() {
 		
 		
 		//----------------------------- HOOKS -----------------------------//
-		listView = findViewById(R.id.listView)
+		listView = findViewById(R.id.alert_box_list_view)
 		
 		
 		bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
