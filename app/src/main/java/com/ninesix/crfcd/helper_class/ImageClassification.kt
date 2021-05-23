@@ -63,7 +63,7 @@ abstract class ImageClassification protected constructor(
 	companion object {
 		private const val DEFAULT_MAX_RESULTS = 10
 		private const val DEFAULT_CONFIDENCE_THRESHOLD = 0.1f
-		private const val DEFAULT_INPUT_SIZE = 640
+		private const val DEFAULT_INPUT_SIZE = 1024
 		private const val BATCH_SIZE = 1
 		private const val PIXEL_SIZE = 3
 		

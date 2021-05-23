@@ -6,11 +6,13 @@
 	android:layout_height="match_parent"
 	android:elevation="1dp"
 	tools:showIn="@layout/activity_main">
-
+	
 	<ImageView
 		android:id="@+id/focus_overlay"
 		android:layout_width="64dp"
 		android:layout_height="64dp"
+		android:scaleX="0"
+		android:scaleY="0"
 		android:background="@drawable/camera_focus"
 		android:visibility="gone" />
 

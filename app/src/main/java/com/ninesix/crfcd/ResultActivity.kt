@@ -1,20 +1,20 @@
 package com.ninesix.crfcd
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.RectF
-import android.net.Uri
+import android.graphics.*
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import com.ninesix.crfcd.helper_class.*
-import kotlinx.coroutines.*
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.concurrent.schedule
+import com.ninesix.crfcd.helper_class.CustomModelInterpreter
+import com.ninesix.crfcd.helper_class.ObjectPrediction
+import com.ninesix.crfcd.helper_class.ResultViewPagerAdapter
+import com.ninesix.crfcd.helper_class.ViewPagerData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
 
 class ResultActivity : AppCompatActivity(), CoroutineScope {
@@ -58,57 +58,156 @@ class ResultActivity : AppCompatActivity(), CoroutineScope {
 				0 -> tab.text = "Front"
 				1 -> tab.text = "White Light"
 				2 -> tab.text = "Back"
-				3 -> tab.text = "Result"
+				3 -> tab.text = "Advanced"
 			}
 		}.attach()
 		tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 		
 		
-		val modelName = intent.getStringExtra("currency")
-		var frontPath = intent.getStringExtra("front")
-		var whiteLightPath = intent.getStringExtra("WL")
-		var backPath = intent.getStringExtra("back")
+//		val currency = intent.getStringExtra("currency")
+//		val frontPath = intent.getStringExtra("front")
+//		val whiteLightPath = intent.getStringExtra("WL")
+//		val backPath = intent.getStringExtra("back")
 		
-		frontPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/1.jpg"
-		whiteLightPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/2021-04-01-11-10-24-439.jpg"
-		backPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/2021-04-01-11-11-08-752.jpg"
+//		Log.d(TAG, "onCreate: $currency $frontPath $whiteLightPath $backPath")
 		
+		val currency = "rs_100_new"
+		val frontPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/100NF1.jpg"
+		val whiteLightPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/100NFW1.jpg"
+		val backPath = "file:///storage/emulated/0/Android/media/com.ninesix.crfcd/CRFCD/100NB1.jpg"
+		
+//		/mnt/sdcard/Android/media/com.ninesix.crfcd/CRFCD/100NF1.jpg
+		
+		/*CoroutineScope(Dispatchers.IO).launch {
+			var bitmap = BitmapFactory.decodeFile(Uri.parse(frontPath).path)
+			bitmap = Bitmap.createBitmap(bitmap, 0, bitmap.height * 30 / 100, bitmap.width, bitmap.height * 70 / 100)
+			if (frontPath != null) {
+				CustomModelInterpreter().execute(frontPath, "all")
+			}
+		}*/
+		
+		/*CoroutineScope(Dispatchers.IO).launch {
+			val customModelInterpreter = CustomModelInterpreter()
+			val advancedPredictions = customModelInterpreter.advancedExecute(frontPath, "100NewFrontNormal")
+			advancedPredictions.forEach { it ->
+				it.forEach {
+					println("${it.label} : ${it.score} : ${it.location}")
+				}
+				println("\n\n\n\n")
+			}
+		}*/
 		
 		val options = BitmapFactory.Options()
 		options.inMutable = true
 		
-		val imagePaths = ArrayList<String>()
-		imagePaths.add(frontPath)
-		imagePaths.add(whiteLightPath)
-		imagePaths.add(backPath)
-		val modelNames = ArrayList<String>()
-		modelNames.add(modelName + "FrontNormal")
-		modelNames.add(modelName + "WhiteLight")
-		modelNames.add(modelName + "WhiteLight")
+		/*val imagePaths = ArrayList<String>()
+		if (frontPath != null) {
+			imagePaths.add(frontPath)
+		}
+		if (whiteLightPath != null) {
+			imagePaths.add(whiteLightPath)
+		}
+		if (backPath != null) {
+			imagePaths.add(backPath)
+		}
+		var modelNames = arrayListOf<String>()
+		if (currency != null) {
+			modelNames = getModelNames(currency)
+		}*/
 		
 		CoroutineScope(Dispatchers.IO).launch {
-			val customModelInterpreter = CustomModelInterpreter()
-			val allPredictions = customModelInterpreter.detailedExecute(imagePaths, modelNames)
+			val customModelInterpreter = CustomModelInterpreter(this@ResultActivity)
+			val bitmaps = ArrayList<Bitmap>()
+			
+			
+			/*val recognizer = TextRecognition.getClient()
+			recognizer.process(InputImage.fromBitmap(bitmap, 0))
+				.addOnSuccessListener {
+					Log.d(TAG, "doInBackground: ${it.text}")
+				}*/
+			
+			/*fun Bitmap.rotate(degrees: Float): Bitmap {
+				val matrix = Matrix().apply { postRotate(degrees) }
+				return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+			}
+			val rotatedBitmap = bitmap.rotate(-90f)*/
+			
+			/*runOnUiThread { imageView.setImageBitmap(rotatedBitmap) }
+			recognizer.process(InputImage.fromBitmap(rotatedBitmap, 0))
+				.addOnSuccessListener {
+					Log.d(TAG, "doInBackground: rotated: ${it.text}")
+				}*/
+			
+			var bitmap = BitmapFactory.decodeFile(frontPath.substring(8), options)
+			bitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, false)
+			bitmaps.add(bitmap)
+			
+			bitmap = BitmapFactory.decodeFile(whiteLightPath.substring(8), options)
+			bitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, false)
+			bitmaps.add(bitmap)
+			
+			bitmap = BitmapFactory.decodeFile(backPath.substring(8), options)
+			bitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, false)
+			bitmaps.add(bitmap)
+			
+			
+			val allPredictions = customModelInterpreter.detailedExecute(bitmaps, getModelNames(currency!!))
+			/*val canvas = Canvas(bitmap)
+			val paint = Paint()
+			paint.alpha = 0xA0
+			paint.color = Color.MAGENTA
+			paint.style = Paint.Style.STROKE
+			paint.textSize = 30f
+			paint.strokeWidth = 2f
+			for(prediction in allPredictions[0]) {
+				Log.d(TAG, "onCreate: prediction: $prediction : ${prediction.location.left * 640} ${prediction.location.top * 640} ${prediction.location.right * 640} ${prediction.location.bottom * 640}")
+				canvas.drawRect(
+					prediction.location.left * 640,
+					prediction.location.top * 640,
+					prediction.location.right * 640,
+					prediction.location.bottom * 640,
+					paint
+				)
+				canvas.drawText(prediction.label, prediction.location.left * 640, prediction.location.top * 640 - 5, paint)
+			}
+			runOnUiThread { imageView.setImageBitmap(bitmap) }*/
+			
+			
 			for ((index, data) in allPredictions.withIndex()) {
 				val predictions = data.toMutableList()
 				Log.d(TAG, "onCreate: ${predictions.size}")
 				predictions.add(0, ObjectPrediction(RectF(0f, 0f, 0f, 0f), "null", 0f))
-				var bitmap = BitmapFactory.decodeFile(Uri.parse(frontPath).path, options)
-				bitmap = Bitmap.createScaledBitmap(bitmap, bitmap.width / 3, bitmap.height / 3, false)
-				dataForViewPager.add(index, ViewPagerData(predictions, bitmap))
+				dataForViewPager.add(index, ViewPagerData(predictions, bitmaps[index]))
 				runOnUiThread { viewPagerAdapter.notifyItemChanged(index) }
 			}
-			dataForViewPager.add(3, null)
-			runOnUiThread { viewPagerAdapter.notifyItemChanged(2) }
+//			dataForViewPager.add(3, null)
+//			runOnUiThread { viewPagerAdapter.notifyItemChanged(2) }
 		}
 	}
 	
 	
 	
 	
-	
-	
-	
+	private fun getModelNames(currency: String) : ArrayList<String> {
+		when(currency) {
+			"rs_100_new" -> {
+				return arrayListOf<String>("100NewFront", "white100NewFront", "100NewBack")
+			}
+			"rs_100_old" -> {
+				return arrayListOf("100OldFront", "white100OldFront", "100OldBack")
+			}
+			"rs_200_new" -> {
+				return arrayListOf("200NewFront", "white200NewFront", "200NewBack")
+			}
+			"rs_500_new" -> {
+				return arrayListOf("all", "500NewFront", "white500NewFront", "500NewBack")
+			}
+			"rs_2000_new" -> {
+				return arrayListOf("2000NewFront", "white2000NewFront", "2000NewBack")
+			}
+		}
+		return arrayListOf()
+	}
 	
 	
 	

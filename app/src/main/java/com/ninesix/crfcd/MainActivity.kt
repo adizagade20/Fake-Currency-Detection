@@ -21,20 +21,16 @@ import android.widget.AdapterView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.TextRecognizer
 import com.ninesix.crfcd.databinding.ActivityMainBinding
 import com.ninesix.crfcd.databinding.LayoutMainCurrencyChooserBinding
-import com.ninesix.crfcd.helper_class.CustomModelInterpreter
-import com.ninesix.crfcd.helper_class.MainCurrencyChooserAdapter
+import com.ninesix.crfcd.helper_class.*
 import kotlinx.coroutines.*
+import me.pqpo.smartcropperlib.SmartCropper
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -51,8 +47,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	companion object {
 		private const val TAG = "MainActivity"
 		private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
-		private val REQUEST_CODE_PERMISSIONS = Random.nextInt(1000)
-		private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
+		private val CAMERA_PERMISSION_REQUEST_CODE = Random.nextInt(1000)
+		private val BLUETOOTH_PERMISSION_REQUEST_CODE = Random.nextInt(1000)
 		private val IMAGE_TYPE = arrayOf("NORMAL", "WHITE LIGHT", "BACK SIDE")
 	}
 	
@@ -94,14 +90,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	//----------------------------- OBJECTS -----------------------------//
 //	private val modelLabelHelper = ModelLabelHelper()
 	private lateinit var binding: ActivityMainBinding
+	private lateinit var detectedCurrency: ObjectPrediction
 	
 	
 	//----------------------------- OCR -----------------------------//
-	private lateinit var recognizer: TextRecognizer
-	
-	
-	
-	
+//	private lateinit var recognizer: TextRecognizer
 	
 	
 	//----------------------------- ON CREATE -----------------------------//
@@ -111,20 +104,15 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		
 		binding = ActivityMainBinding.inflate(layoutInflater)
 		setContentView(binding.root)
-		
 		setSupportActionBar(binding.mainToolbarInclude.materialToolbar)
 		
-//		bluetoothListAlertBox()
-
-//		onCreateContinued()
+		getModelNameFromUser(ObjectPrediction(RectF(0f,0f,0f,0f), "rs_2000_new", 10.0f))
 		
-		val intent = Intent(this@MainActivity, ResultActivity::class.java)
-		intent.putExtra("NormalImage", imageUriList["front"])
-		intent.putExtra("WhiteLightImage", imageUriList["WL"])
-		intent.putExtra("UVLightImage", imageUriList["back"])
+		SmartCropper.buildImageDetector(this);
 		
-		getModelNameFromUser("Rs. 100 New", intent)
+		onCreateContinued()
 	}
+	
 	
 	private fun onCreateContinued() {
 		
@@ -143,10 +131,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		
 		//----------------------------- CAMERA PERMISSION -----------------------------//
 		executor = Executors.newSingleThreadExecutor()
-		if (allPermissionsGranted()) {
+		if (ContextCompat.checkSelfPermission(baseContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
 			startCamera()
 		} else {
-			ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+			ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_REQUEST_CODE)
 		}
 		
 		
@@ -157,25 +145,28 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		
 		binding.cameraControls.takePhoto.setOnClickListener {
 			if (isCaptureInProgress) {
-				Toast.makeText(applicationContext, "Capture in progress", Toast.LENGTH_SHORT).show()
+//				val snackBar = Snackbar.make(binding.root, "Image capture in progress", Snackbar.LENGTH_SHORT)
+//				snackBar.setAction("Ok") {}
+//				snackBar.show()
 				return@setOnClickListener
 			} else {
 				isCaptureInProgress = true
+				binding.cameraControls.takePhoto.isClickable = false
+				binding.cameraControls.takePhoto.isActivated = false
 				when (imageUriList.size) {
 					0 -> {
-						takePhoto(true, "front")
+						takePhoto("front")
 					}
 					1 -> {
-						val isBTReady = sendSignalToBluetooth("A")
 						camera.cameraControl.enableTorch(false).addListener({
-							Timer().schedule(2000) { takePhoto(isBTReady, "WL") }
+							binding.cameraControls.flash.background = ResourcesCompat.getDrawable(resources, R.drawable.flash_off, null)
+							runOnUiThread { bluetoothListAlertBox() }
 						}, executor)
 					}
 					2 -> {
-						val isBTReady = sendSignalToBluetooth("B")
-						camera.cameraControl.enableTorch(false).addListener({
-							Timer().schedule(2000) { takePhoto(isBTReady, "back") }
-						}, executor)
+//						camera.cameraControl.enableTorch(false).addListener({
+						takePhoto("back")
+//						}, executor)
 					}
 				}
 			}
@@ -183,7 +174,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		
 		
 		//----------------------------- OCR -----------------------------//
-		recognizer = TextRecognition.getClient()
+//		recognizer = TextRecognition.getClient()
 		
 		
 		//----------------------------- FLASH BUTTON -----------------------------//
@@ -198,16 +189,25 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 						binding.cameraControls.flash.background = ResourcesCompat.getDrawable(resources, R.drawable.flash_on, null)
 					}, executor)
 				}
+			} else {
+				Toast.makeText(applicationContext, "No flash unit available", Toast.LENGTH_LONG).show()
 			}
 		}
 		
+		//----------------------------- CAMERA SWITCH BUTTON -----------------------------//
+		
 		
 	}
-	
-	
+
+
 //--------------------------------------------------------------------------------------------- BLUETOOTH --------------------------------------------------------------------------------------------//
 	
 	private fun bluetoothListAlertBox() {
+		
+		if (bluetoothSocket?.isConnected == true) {
+			sendSignalToBluetooth()
+			return
+		}
 		
 		val rootView: View = LayoutInflater.from(applicationContext).inflate(R.layout.layout_main_bluetooth_list_view, null)
 		
@@ -227,9 +227,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 			finish()
 		} else if (!bluetoothAdapter.isEnabled) {
 			val turnOnBluetoothIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-			startActivityForResult(turnOnBluetoothIntent, 1)
+			startActivityForResult(turnOnBluetoothIntent, BLUETOOTH_PERMISSION_REQUEST_CODE)
+			alert.dismiss()
 		}
-		
 		val pairedDevices: Set<BluetoothDevice> = bluetoothAdapter!!.bondedDevices
 		val list: ArrayList<String> = ArrayList<String>()
 		
@@ -247,50 +247,71 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 			address = info.substring(info.length - 17)
 
 //			asyncTask = ConnectBT().execute(*arrayOfNulls<Void>(0))
-			connectBluetooth = ConnectBluetooth(binding.mainParentLayout)
+			connectBluetooth = ConnectBluetooth(binding)
 			connectBluetooth.execute()
 			alert.dismiss()
-			onCreateContinued()
 		}
 		
 	}
 	
 	
-	private fun sendSignalToBluetooth(value: String): Boolean {
-		return try {
-			bluetoothSocket!!.outputStream.write(value.toByteArray())
-			true
+	private fun sendSignalToBluetooth() {
+		try {
+			bluetoothSocket!!.outputStream.write("A".toByteArray())
+			if (bluetoothSocket!!.inputStream.read() == 65) {
+				takePhoto("WL")
+			}
 		} catch (e: Exception) {
 			Toast.makeText(applicationContext, "There is some error contacting bluetooth, try again!", Toast.LENGTH_LONG).show()
-			false
+			bluetoothListAlertBox()
 		}
 	}
 	
-	
-	private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-		ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
-	}
 	
 	override fun onDestroy() {
 		super.onDestroy()
 		executor.shutdown()
 	}
 	
+	
 	override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-		if (requestCode == REQUEST_CODE_PERMISSIONS) {
-			if (allPermissionsGranted()) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+		if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
+			if (ContextCompat.checkSelfPermission(baseContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
 				startCamera()
 			} else {
 				Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show()
 				finish()
 			}
+		} else if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE) {
+			if (ContextCompat.checkSelfPermission(baseContext, Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED) {
+				Log.d(TAG, "onRequestPermissionsResult: aditya")
+				bluetoothListAlertBox()
+			} else {
+				Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show()
+			}
 		}
 	}
 	
 	
+	override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+		super.onActivityResult(requestCode, resultCode, data)
+		if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE && resultCode == RESULT_OK) {
+			bluetoothListAlertBox()
+		} else if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE && resultCode == RESULT_CANCELED) {
+			
+			val snackBar = Snackbar.make(binding.root, "Bluetooth permission required", Snackbar.LENGTH_INDEFINITE)
+			snackBar.setAction("Turn ON") {
+				val turnOnBluetoothIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+				startActivityForResult(turnOnBluetoothIntent, BLUETOOTH_PERMISSION_REQUEST_CODE)
+			}
+			snackBar.show()
+		}
+	}
+
 //************************************************************************************* BINDING CAMERA USE CASES *************************************************************************************//
 	
-	@SuppressLint("UnsafeExperimentalUsageError", "ClickableViewAccessibility")
+	@SuppressLint("UnsafeExperimentalUsageError")
 	private fun startCamera() {
 		binding.imageTypeTextView.text = IMAGE_TYPE[0]
 		
@@ -322,115 +343,115 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 				Log.e(TAG, "Use case binding failed", exc)
 			}
 			
+			focusOverlayConfig()
 			
-			binding.viewFinder.setOnTouchListener(OnTouchListener { _: View, motionEvent: MotionEvent ->
-				when (motionEvent.action) {
-					MotionEvent.ACTION_DOWN -> return@OnTouchListener true
-					MotionEvent.ACTION_UP -> {
-						val factory = binding.viewFinder.meteringPointFactory
-						val point = factory.createPoint(motionEvent.x, motionEvent.y)
-						val action = FocusMeteringAction.Builder(point).build()
-						camera.cameraControl.startFocusAndMetering(action)
-						
-						var x = motionEvent.x - 64
-						var y = motionEvent.y - 64
-						
-						x = if (x < 0) motionEvent.x else if (x > (width - 128)) (width - 128).toFloat() else motionEvent.x - 64
-						
-						y = if (y < 0) motionEvent.y else if (y > (height - 128)) (height - 128).toFloat() else motionEvent.y - 64
-						
-						binding.focusOverlayInclude.focusOverlay.x = x
-						binding.focusOverlayInclude.focusOverlay.y = y
-						binding.focusOverlayInclude.focusOverlay.visibility = View.VISIBLE
-						focusOverlayTimer?.cancel()
-						focusOverlayTimer = Timer().schedule(3000) {
-							runOnUiThread { binding.focusOverlayInclude.focusOverlay.visibility = View.GONE }
-						}
-						return@OnTouchListener true
-					}
-					else -> return@OnTouchListener false
-				}
-			})
+			/*imageAnalysis.setAnalyzer(executor, { imageProxy: ImageProxy ->
 			
-			imageAnalysis.setAnalyzer(executor, { imageProxy: ImageProxy ->
-				
-				/*bitmap = imageProxy.image!!.toBitmap()
-				recognize(imageProxy)*/
-				
-				/*val options = ObjectDetectorOptions.Builder()
-					.setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
-					.enableMultipleObjects()
-					.build()
-				val objectDetector = ObjectDetection.getClient(options)*/
-				
-				val mediaImage = imageProxy.image
-				
-				if (mediaImage != null) {
-					val image = InputImage.fromMediaImage(mediaImage, 0)
-					Log.d(TAG, "startCamera: Rotation: ${imageProxy.imageInfo.rotationDegrees}")
-					recognizer.process(image)
-						.addOnSuccessListener {
-							processOCRResult(it.text)
-						}
-						.addOnCompleteListener {
-							
-							Timer().schedule(2000) { imageProxy.close() }
-							
-							/*objectDetector.process(image)
-							.addOnSuccessListener { it1 ->
-								
-								Log.d(TAG, "startCameraObject: ${it1.size}")
-								
-								if (it1.size != 0) {
-									
-									val overlay = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-									
-									val canvas = Canvas(overlay)
-									
-									val paint = Paint()
-									paint.alpha = 0xA0
-									paint.color = Color.MAGENTA
-									paint.style = Paint.Style.STROKE
-									paint.textSize = 58f
-									paint.strokeWidth = 2f
-									
-									canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
-									
-									it1.forEach { it2 ->
-										Log.d(TAG, "startCamera: ${it2.boundingBox}")
-//											Log.d(TAG, "startCamera: ${it2.boundingBox.left}")
-//											Log.d(TAG, "startCamera: ${it2.boundingBox.top}")
-//											Log.d(TAG, "startCamera: ${it2.boundingBox.right}")
-//											Log.d(TAG, "startCamera: ${it2.boundingBox.bottom}")
-//											Log.d(TAG, "startCamera: ${it2.boundingBox.left * width / mediaImage.width}")
-//											Log.d(TAG, "startCamera: ${it2.boundingBox.top * height / mediaImage.height}")
-//											Log.d(TAG, "startCamera: ${it2.boundingBox.right * width / mediaImage.width}")
-//											Log.d(TAG, "startCamera: ${it2.boundingBox.bottom * height / mediaImage.height}")
-										
-										canvas.drawRect(
-//												(it2.boundingBox.left * width / mediaImage.width).toFloat(),
-//												(it2.boundingBox.top * height / mediaImage.height).toFloat(),
-//												(it2.boundingBox.right * width / mediaImage.width).toFloat(),
-//												(it2.boundingBox.bottom * height / mediaImage.height).toFloat()
-											RectF(it2.boundingBox), paint
-//												, paint
-										)
-									}
-									canvas.drawText("i   t", 100f, 100f, paint)
-									val matrix = Matrix()
-//										matrix.setRotate(-90f)
-									
-									Log.d(TAG, "startCamera: overlay : ${overlay.width} x ${overlay.height}")
-//										overlay = Bitmap.createBitmap(overlay, 0, 0, overlay.width, overlay.height, matrix, false)
-									rectBoxOverlay.setImageBitmap(overlay)
-									Log.d(TAG, "startCamera: overlay : ${overlay.width} x ${overlay.height}")
-								}
-							}*/
-						}
-				}
-			})
+			})*/
 			
 		}, ContextCompat.getMainExecutor(this))
+	}
+	
+	
+	/*val options = ObjectDetectorOptions.Builder()
+//				.setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
+				.enableMultipleObjects()
+				.enableClassification()  // Optional
+				.build()
+			
+			val objectDetector = ObjectDetection.getClient(options)
+			
+			val paint = Paint().apply {
+				isAntiAlias = true
+				style = Paint.Style.STROKE
+				color = Color.RED
+				strokeWidth = 10f
+			}*/
+	
+	/*bitmap = imageProxy.image!!.toBitmap()
+				recognize(imageProxy)*/
+	
+	/*CoroutineScope(Dispatchers.IO).launch {
+					val mediaImage = imageProxy.image
+					if (mediaImage != null) {
+						val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+						recognizer.process(image)
+							.addOnSuccessListener {
+								processOCRResult(it.text)
+							}
+							.addOnCompleteListener {
+//								Timer().schedule(2000) { imageProxy.close() }
+							}
+						
+						val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+						
+						objectDetector.process(image)
+							.addOnSuccessListener { objects ->
+								val canvas = Canvas(bitmap)
+								Log.d(TAG, "startCamera: $width x $height \t\t : \t\t ${mediaImage.width} x ${mediaImage.height} \t\t : \t\t ${bitmap.width} x ${bitmap.height}")
+								for (detectedObject in objects) {
+									Log.d(TAG, "startCamera: ${detectedObject.boundingBox}")
+									Log.d(
+										TAG, "startCamera:" +
+												"${detectedObject.boundingBox.left * width / mediaImage.width} ${detectedObject.boundingBox.top * height / mediaImage.height} " +
+												"${detectedObject.boundingBox.right * width / mediaImage.width} ${detectedObject.boundingBox.bottom * height / mediaImage.height}"
+									)
+									canvas.drawRect(
+										(detectedObject.boundingBox.left * width / mediaImage.width).toFloat(),
+										(detectedObject.boundingBox.top * height / mediaImage.height).toFloat(),
+										(detectedObject.boundingBox.right * width / mediaImage.width).toFloat(),
+										(detectedObject.boundingBox.bottom * height / mediaImage.height).toFloat(),
+										paint
+									)
+								}
+								binding.detectedObjects.setImageBitmap(bitmap)
+								
+							}
+							.addOnCompleteListener {
+								Timer().schedule(10000) { imageProxy.close() }
+							}
+					}
+				}*/
+	
+	
+	@SuppressLint("ClickableViewAccessibility")
+	private fun focusOverlayConfig() {
+		binding.viewFinder.setOnTouchListener(OnTouchListener { _: View, motionEvent: MotionEvent ->
+			when (motionEvent.action) {
+				MotionEvent.ACTION_DOWN -> return@OnTouchListener true
+				MotionEvent.ACTION_UP -> {
+					val factory = binding.viewFinder.meteringPointFactory
+					val point = factory.createPoint(motionEvent.x, motionEvent.y)
+					val action = FocusMeteringAction.Builder(point).build()
+					camera.cameraControl.startFocusAndMetering(action)
+					
+					var x = motionEvent.x - 64
+					var y = motionEvent.y - 64
+					
+					x = if (x < 0) motionEvent.x else if (x > (width - 128)) (width - 128).toFloat() else motionEvent.x - 64
+					
+					y = if (y < 0) motionEvent.y else if (y > (height - 128)) (height - 128).toFloat() else motionEvent.y - 64
+					
+					binding.focusOverlayInclude.focusOverlay.x = x
+					binding.focusOverlayInclude.focusOverlay.y = y
+					if (focusOverlayTimer != null) {
+						binding.focusOverlayInclude.focusOverlay.scaleX = 0f
+						binding.focusOverlayInclude.focusOverlay.scaleY = 0f
+					}
+					binding.focusOverlayInclude.focusOverlay.animate().scaleX(1f).scaleY(1f).setDuration(500).start()
+					binding.focusOverlayInclude.focusOverlay.visibility = View.VISIBLE
+					focusOverlayTimer?.cancel()
+					focusOverlayTimer = Timer().schedule(2000) {
+						runOnUiThread {
+							binding.focusOverlayInclude.focusOverlay.animate().scaleX(0f).scaleY(0f).setDuration(250).start()
+						}
+						focusOverlayTimer = null
+					}
+					return@OnTouchListener true
+				}
+				else -> return@OnTouchListener false
+			}
+		})
 	}
 	
 	
@@ -443,15 +464,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	}
 	
 	
-	private fun takePhoto(isBTReady: Boolean, imageType: String) {
-		if (!isBTReady) {
-			isCaptureInProgress = false
-			Snackbar.make(findViewById(R.id.main_parent_layout), "There is some error connecting to Bluetooth, try restarting the Device and App!", Snackbar.LENGTH_INDEFINITE)
-				.setAction("Continue") {
-					recreate()
-				}
-			return
-		}
+	private fun takePhoto(imageType: String) {
+		
 		if (imageType == "front") {
 			imageAnalysis.clearAnalyzer()
 			cameraProvider.unbind(imageAnalysis)
@@ -461,60 +475,99 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		
 		val photoFile = File(outputDirectory, SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis()) + ".jpg")
 		val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-		
 		imageCapture.takePicture(outputOptions, ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageSavedCallback {
 			override fun onError(exc: ImageCaptureException) {
 				Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
-				Toast.makeText(applicationContext, "There is some error capturing the photo! Please try restarting the device", Toast.LENGTH_LONG).show()
+				Toast.makeText(applicationContext, "There is some error capturing the photo! Please try restarting the application", Toast.LENGTH_LONG).show()
 			}
 			
 			override fun onImageSaved(output: ImageCapture.OutputFileResults) {
 				val savedUri = Uri.fromFile(photoFile)
-				val msg = "Photo capture succeeded !"
-				Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-				Log.d(TAG, "onImageSaved: $msg $savedUri")
+				Log.d(TAG, "onImageSaved: Photo capture succeeded ! $savedUri")
 				
-				isCaptureInProgress = false
+				/*CoroutineScope(Dispatchers.IO).launch {
+					val customModelInterpreter = CustomModelInterpreter(this@MainActivity)
+					val predictions = customModelInterpreter.execute(savedUri.toString(), "all_trial")
+					Log.d(TAG, "onImageSavedWithoutCompression: $predictions")
+				}*/
 				
-				imageUriList[imageType] = savedUri.toString()
-				
-				when (imageType) {
-					"front" -> {
-						binding.imageTypeTextView.text = IMAGE_TYPE[1]
-						CoroutineScope(Dispatchers.IO).launch {
-							val customModelInterpreter = CustomModelInterpreter()
-							val predictions = customModelInterpreter.execute(savedUri.toString())
-							customModelInterpreter.cancel()
-						}
-					}
-					"WL" -> {
-						binding.imageTypeTextView.text = IMAGE_TYPE[2]
-					}
-					"back" -> {
-						cameraProvider.unbindAll()
-						connectBluetooth.cancel()
-						bluetoothSocket?.close()
-						
-						recognizer.close()
-						val intent = Intent(this@MainActivity, ResultActivity::class.java)
-						intent.putExtra("NormalImage", imageUriList["front"])
-						intent.putExtra("WhiteLightImage", imageUriList["WL"])
-						intent.putExtra("UVLightImage", imageUriList["back"])
-						getModelNameFromUser("Rs. 100 New", intent)
-					}
+				CoroutineScope(Dispatchers.Main).launch {
+					cropImage(savedUri, imageType)
 				}
 			}
 		})
 	}
 	
 	
-	
-	private fun getModelNameFromUser(currency: String, intent: Intent) {
-		val rootBinding = LayoutMainCurrencyChooserBinding.inflate(layoutInflater)
+	private fun cropImage(savedUri: Uri, imageType: String) {
+		binding.mainCaptureLayout.visibility = View.GONE
+		binding.mainCameraControlLayout.visibility = View.GONE
+		binding.mainCropLayout.visibility = View.VISIBLE
+			
+		isCaptureInProgress = false
+		binding.cameraControls.takePhoto.isClickable = true
+		binding.cameraControls.takePhoto.isActivated = true
 		
+		binding.mainCropCrop.setImageToCrop(BitmapFactory.decodeFile(savedUri.path))
+		
+		binding.mainCropRetake.setOnClickListener {
+			binding.mainCaptureLayout.visibility = View.VISIBLE
+			binding.mainCameraControlLayout.visibility = View.VISIBLE
+			binding.mainCropLayout.visibility = View.GONE
+		}
+		
+		binding.mainCropSave.setOnClickListener {
+			if (binding.mainCropCrop.canRightCrop()) {
+				val croppedBitmap = binding.mainCropCrop.crop()
+				croppedBitmap.compress(Bitmap.CompressFormat.PNG, 100, FileOutputStream(File(savedUri.path!!)))
+			} else {
+				Snackbar.make(binding.root, "Can not crop image, please retry cropping or retake", Snackbar.LENGTH_SHORT).show()
+			}
+			saveImageAndChangeType(savedUri, imageType)
+		}
+	}
+	
+	
+	private fun saveImageAndChangeType(savedUri: Uri, imageType: String) {
+		imageUriList[imageType] = savedUri.toString()
+		
+		when (imageType) {
+			"front" -> {
+				binding.imageTypeTextView.text = IMAGE_TYPE[1]
+				CoroutineScope(Dispatchers.IO).launch {
+					val customModelInterpreter = CustomModelInterpreter(this@MainActivity)
+					val predictions = customModelInterpreter.execute(savedUri.toString(), "all")
+					detectedCurrency = predictions[0]
+					customModelInterpreter.cancel()
+				}
+			}
+			"WL" -> {
+				binding.imageTypeTextView.text = IMAGE_TYPE[2]
+			}
+			"back" -> {
+				cameraProvider.unbindAll()
+				runOnUiThread { getModelNameFromUser(detectedCurrency) }
+			}
+		}
+		
+		binding.mainCaptureLayout.visibility = View.VISIBLE
+		binding.mainCameraControlLayout.visibility = View.VISIBLE
+		binding.mainCropLayout.visibility = View.GONE
+	}
+	
+	
+	
+	
+	
+	private fun getModelNameFromUser(detectedCurrency: ObjectPrediction) {
+		val rootBinding = LayoutMainCurrencyChooserBinding.inflate(layoutInflater)
+		val intent = Intent(this@MainActivity, ResultActivity::class.java)
+		intent.putExtra("front", imageUriList["front"])
+		intent.putExtra("WL", imageUriList["WL"])
+		intent.putExtra("back", imageUriList["back"])
 		rootBinding.mainCurrencyChooserRecycler.layoutManager = LinearLayoutManager(this)
-		rootBinding.mainCurrencyChooserTextView.text = Html.fromHtml("According to the system, given note is of <u><b>$currency</u></b>, but final call will be yours")
-		rootBinding.mainCurrencyChooserRecycler.adapter = MainCurrencyChooserAdapter(this, currency, intent)
+		rootBinding.mainCurrencyChooserTextView.text = Html.fromHtml("According to the system, given note is of <u><b>${detectedCurrency.label}</u></b>, but final call will be yours")
+		rootBinding.mainCurrencyChooserRecycler.adapter = MainCurrencyChooserAdapter(this, detectedCurrency, intent)
 		
 		val builder = AlertDialog.Builder(this)
 		builder.setView(rootBinding.root)
@@ -525,20 +578,32 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 	}
 	
 	
-	
-	private fun processOCRResult(text: String) {
-//		Log.d(TAG, "processOCRResult: $text")
-	}
-	
+	/*private fun loadModule(fileName: String, numberOfResults: Int, savedUri: Uri) = launch {
+		withContext(Dispatchers.IO) {
+			val imageClassification = ImageClassification.create(
+				classifierModel = ClassifierModel.FLOAT,
+				assetManager = assets,
+				modelPath = "$fileName.tflite",
+				labelPath = "$fileName.txt",
+				numberOfResults = 1
+			)
+			var bitmap = BitmapFactory.decodeFile(savedUri.path)
+			bitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, false)
+			val predictions = imageClassification.classifyImage(bitmap)
+			Log.d(TAG, "loadModule: $predictions")
+			Log.d(TAG, "onCreate: ${System.currentTimeMillis()}")
+		}
+	}*/
 	
 	
 //********************************************************************************** BLUETOOTH CONNECTION COROUTINE **********************************************************************************//
 
-	private inner class ConnectBluetooth(private val mainLayout: ConstraintLayout) : CoroutineScope {
+	private inner class ConnectBluetooth(private val binding: ActivityMainBinding) : CoroutineScope {
 		val job = Job()
 		override val coroutineContext: CoroutineContext get() = Dispatchers.Main + job
 		
 		private var connectSuccess: Boolean = true
+//		private lateinit var builder: AlertDialog
 		
 		fun cancel() {
 			job.cancel()
@@ -551,16 +616,19 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		}
 		
 		private suspend fun doInBackground() = withContext(Dispatchers.IO) {
+			Log.d(TAG, "doInBackground: start")
 			try {
 				if (this@MainActivity.bluetoothSocket == null || !this@MainActivity.isBluetoothConnected) {
 					this@MainActivity.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 					val bluetoothDevice: BluetoothDevice = this@MainActivity.bluetoothAdapter!!.getRemoteDevice(this@MainActivity.address)
-//					this@MainActivity.bluetoothSocket = bluetoothDevice.createInsecureRfcommSocketToServiceRecord(this@MainActivity.myUUID)
-					this@MainActivity.bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(this@MainActivity.myUUID)
+					this@MainActivity.bluetoothSocket = bluetoothDevice.createInsecureRfcommSocketToServiceRecord(this@MainActivity.myUUID)
+//					this@MainActivity.bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(this@MainActivity.myUUID)
 					BluetoothAdapter.getDefaultAdapter().cancelDiscovery()
 					this@MainActivity.bluetoothSocket!!.connect()
+					Log.d(TAG, "doInBackground: connect")
 				}
-			} catch (e: IOException) {
+			} catch (e: Exception) {
+				Log.d(TAG, "doInBackground: $e")
 				connectSuccess = false
 			}
 			return@withContext
@@ -568,22 +636,28 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 		
 		private fun onPreExecute() {
 //			this@MainActivity.progress = ProgressDialog.show(this@MainActivity, "Connecting...", "Please wait !!!")
+//			val alert = AlertDialog.Builder(applicationContext)
+//			alert.setView(LayoutMainBtProgressBinding.inflate(layoutInflater).root)
+//			builder = alert.create()
+//			builder.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+//			builder.setCancelable(false)
+//			builder.show()
 		}
 		
 		private fun onPostExecute() {
+//			builder.cancel()
 			if (connectSuccess) {
 				Log.d(TAG, "onPostExecute: Connected.")
+				sendSignalToBluetooth()
 				this@MainActivity.isBluetoothConnected = true
 			} else {
-				Log.d(TAG, "onPostExecute: Connection Failed. Is it a SPP Bluetooth? Try again.")
-				val snackBar = Snackbar.make(mainLayout, "Connection Failed. Is it a SPP Bluetooth?", Snackbar.LENGTH_INDEFINITE)
+				val snackBar = Snackbar.make(binding.root, "Connection Failed. Is it a SPP Bluetooth?", Snackbar.LENGTH_INDEFINITE)
 				snackBar.animationMode = Snackbar.ANIMATION_MODE_SLIDE
 				snackBar.setAction("Retry") {
 					bluetoothListAlertBox()
 				}
 				snackBar.show()
 			}
-//			this@MainActivity.progress!!.dismiss()
 		}
 		
 	}

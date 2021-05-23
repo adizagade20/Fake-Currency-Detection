@@ -10,77 +10,136 @@
 	<include
 		android:id="@+id/main_toolbar_include"
 		layout="@layout/layout_toolbar"
-		app:layout_constraintBottom_toTopOf="@id/main_layout"
+		app:layout_constraintBottom_toTopOf="@id/main_capture_layout"
 		app:layout_constraintLeft_toLeftOf="parent"
 		app:layout_constraintRight_toRightOf="parent"
 		app:layout_constraintTop_toTopOf="parent" />
 
-	<LinearLayout
-		android:id="@+id/main_layout"
+	<androidx.constraintlayout.widget.ConstraintLayout
+		android:id="@+id/main_capture_layout"
 		android:layout_width="match_parent"
 		android:layout_height="0dp"
 		android:orientation="vertical"
-		android:weightSum="100"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintLeft_toLeftOf="parent"
 		app:layout_constraintRight_toRightOf="parent"
 		app:layout_constraintTop_toBottomOf="@id/main_toolbar_include">
 
-		<androidx.constraintlayout.widget.ConstraintLayout
-			android:id="@+id/main_capture_layout"
+		<androidx.camera.view.PreviewView
+			android:id="@+id/viewFinder"
 			android:layout_width="match_parent"
 			android:layout_height="0dp"
-			android:layout_weight="88"
-			android:orientation="vertical">
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintLeft_toLeftOf="parent"
+			app:layout_constraintRight_toRightOf="parent"
+			app:layout_constraintTop_toTopOf="parent" />
 
-			<androidx.camera.view.PreviewView
-				android:id="@+id/viewFinder"
-				android:layout_width="match_parent"
-				android:layout_height="match_parent"
-				app:layout_constraintBottom_toBottomOf="parent"
-				app:layout_constraintLeft_toLeftOf="parent"
-				app:layout_constraintRight_toRightOf="parent"
-				app:layout_constraintTop_toTopOf="parent" />
+		<ImageView
+			android:id="@+id/detected_objects"
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			app:layout_constraintBottom_toBottomOf="@id/viewFinder"
+			app:layout_constraintLeft_toLeftOf="@id/viewFinder"
+			app:layout_constraintRight_toRightOf="@id/viewFinder"
+			app:layout_constraintTop_toTopOf="@id/viewFinder" />
 
-			<include
-				android:id="@+id/focus_overlay_include"
-				layout="@layout/layout_main_focus_overlay"
-				app:layout_constraintBottom_toBottomOf="@id/viewFinder"
-				app:layout_constraintLeft_toLeftOf="@id/viewFinder"
-				app:layout_constraintRight_toRightOf="@id/viewFinder"
-				app:layout_constraintTop_toTopOf="@id/viewFinder" />
+		<include
+			android:id="@+id/focus_overlay_include"
+			layout="@layout/layout_main_focus_overlay"
+			app:layout_constraintBottom_toBottomOf="@id/viewFinder"
+			app:layout_constraintLeft_toLeftOf="@id/viewFinder"
+			app:layout_constraintRight_toRightOf="@id/viewFinder"
+			app:layout_constraintTop_toTopOf="@id/viewFinder" />
 
-			<TextView
-				android:id="@+id/imageTypeTextView"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:textAlignment="center"
-				android:textColor="@color/teal_200"
-				android:textSize="24sp"
-				app:layout_constraintBottom_toBottomOf="parent"
-				app:layout_constraintLeft_toLeftOf="parent"
-				app:layout_constraintRight_toRightOf="parent"
-				app:layout_constraintTop_toTopOf="parent"
-				app:layout_constraintVertical_bias="0.05"
-				tools:text="20" />
+		<TextView
+			android:id="@+id/imageTypeTextView"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:textAlignment="center"
+			android:textColor="@color/teal_200"
+			android:textSize="24sp"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintLeft_toLeftOf="parent"
+			app:layout_constraintRight_toRightOf="parent"
+			app:layout_constraintTop_toTopOf="parent"
+			app:layout_constraintVertical_bias="0.05"
+			tools:text="20" />
 
-			<include
-				android:id="@+id/camera_overlay_include"
-				layout="@layout/layout_main_camera_overlay"
-				app:layout_constraintBottom_toBottomOf="parent"
-				app:layout_constraintLeft_toLeftOf="parent"
-				app:layout_constraintRight_toRightOf="parent"
-				app:layout_constraintTop_toTopOf="parent" />
+		<include
+			android:id="@+id/camera_overlay_include"
+			layout="@layout/layout_main_camera_overlay"
 
-		</androidx.constraintlayout.widget.ConstraintLayout>
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintLeft_toLeftOf="parent"
+			app:layout_constraintRight_toRightOf="parent"
+			app:layout_constraintTop_toTopOf="parent" />
+
+	</androidx.constraintlayout.widget.ConstraintLayout>
+
+	<androidx.constraintlayout.widget.ConstraintLayout
+		android:id="@+id/main_camera_control_layout"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginBottom="10dp"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintLeft_toLeftOf="parent"
+		app:layout_constraintRight_toRightOf="parent">
 
 		<include
 			android:id="@+id/camera_controls"
 			layout="@layout/layout_main_camera_controls"
 			app:layout_constraintBottom_toBottomOf="parent"
 			app:layout_constraintLeft_toLeftOf="parent"
+			app:layout_constraintRight_toRightOf="parent" />
+
+	</androidx.constraintlayout.widget.ConstraintLayout>
+
+	<LinearLayout
+		android:id="@+id/main_crop_layout"
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:orientation="vertical"
+		android:visibility="gone"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintLeft_toLeftOf="parent"
+		app:layout_constraintRight_toRightOf="parent"
+		app:layout_constraintTop_toBottomOf="@id/main_toolbar_include">
+
+		<me.pqpo.smartcropperlib.view.CropImageView
+			android:layout_width="match_parent"
+			android:id="@+id/main_crop_crop"
+			android:layout_height="0dp"
+			android:layout_weight="90"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintLeft_toLeftOf="parent"
 			app:layout_constraintRight_toRightOf="parent"
-			app:layout_constraintTop_toBottomOf="@id/main_capture_layout" />
+			app:layout_constraintTop_toTopOf="parent" />
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_gravity="center_vertical"
+			android:layout_weight="10"
+			android:orientation="horizontal"
+			android:paddingHorizontal="20dp">
+
+			<com.google.android.material.button.MaterialButton
+				android:id="@+id/main_crop_retake"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="20dp"
+				android:layout_weight="1"
+				android:text="@string/retake" />
+
+			<com.google.android.material.button.MaterialButton
+				android:id="@+id/main_crop_save"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="20dp"
+				android:layout_weight="1"
+				android:text="@string/save" />
+
+		</LinearLayout>
 
 	</LinearLayout>
 

@@ -7,7 +7,7 @@
 	android:layout_weight="12"
 	tools:showIn="@layout/activity_main">
 
-	<ImageView
+	<!--<ImageView
 		android:id="@+id/image1"
 		android:layout_width="24sp"
 		android:layout_height="24sp"
@@ -31,6 +31,17 @@
 		android:layout_height="24sp"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintLeft_toRightOf="@id/image2"
+		app:layout_constraintRight_toLeftOf="@id/take_photo"
+		app:layout_constraintTop_toTopOf="parent" />-->
+
+	<ImageView
+		android:id="@+id/camera_switch"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:scaleType="fitCenter"
+		android:background="@drawable/camera_switch"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintLeft_toLeftOf="parent"
 		app:layout_constraintRight_toLeftOf="@id/take_photo"
 		app:layout_constraintTop_toTopOf="parent" />
 

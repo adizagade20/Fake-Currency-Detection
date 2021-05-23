@@ -8,13 +8,14 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.ninesix.crfcd.R
 import com.ninesix.crfcd.databinding.LayoutMainCurrencyChooserRecyclerItemBinding
+import java.util.*
+import kotlin.concurrent.schedule
 
-class MainCurrencyChooserAdapter(private val context: Context, private var currency: String, private val intent: Intent) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class MainCurrencyChooserAdapter(private val context: Context, private var detectedCurrency: ObjectPrediction, private val intent: Intent) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 	
-	private val currencyNames = arrayOf("Rs. 100 New", "Rs. 100 Old", "Rs. 200", "Rs. 500", "Rs. 2000")
+	private val currencyNames = arrayOf("rs_100_new", "rs_100_old", "rs_200_new", "rs_500_new", "rs_2000_new")
 	private val currencyImages = arrayOf(R.drawable.rs_100_new, R.drawable.rs_100_old, R.drawable.rs_200, R.drawable.rs_500, R.drawable.rs_2000)
-	
-	private var currentSelected = -1
+	private var selectedCurrency = 0
 	
 	override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
 		return ViewHolder(LayoutMainCurrencyChooserRecyclerItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
@@ -23,20 +24,22 @@ class MainCurrencyChooserAdapter(private val context: Context, private var curre
 	
 	override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
 		holder as ViewHolder
-		with(holder) {
-			binding.mainCurrencyChooserItemTextView.text = currencyNames[position]
-			binding.mainCurrencyChooserItemImageView.setImageResource(currencyImages[position])
+		with(holder.binding) {
+			mainCurrencyChooserItemTextView.text = currencyNames[position]
+			mainCurrencyChooserItemImageView.setImageResource(currencyImages[position])
 			
-			if(currencyNames[position].contains(currency)) {
-				binding.mainCurrencyChooserItemRootLayout.setBackgroundColor(ResourcesCompat.getColor(context.resources, R.color.gray, null))
-				currentSelected = position
+			if(currencyNames[position] == detectedCurrency.label) {
+//				"${currencyNames[position]} ${detectedCurrency.score.toString().substring(0, 4)} %".also { mainCurrencyChooserItemTextView.text = it }
+				mainCurrencyChooserItemRootLayout.setBackgroundColor(ResourcesCompat.getColor(context.resources, R.color.gray, null))
+				selectedCurrency = position
 			}
 			
-			binding.mainCurrencyChooserItemRootLayout.setOnClickListener {
-				binding.mainCurrencyChooserItemRootLayout.setBackgroundColor(ResourcesCompat.getColor(context.resources, R.color.gray, null))
+			mainCurrencyChooserItemRootLayout.setOnClickListener {
+				notifyItemChanged(selectedCurrency)
+				notifyItemChanged(position)
 				
 				intent.putExtra("currency", currencyNames[position])
-				context.startActivity(intent)
+				Timer().schedule(500) { context.startActivity(intent) }
 			}
 		}
 	}

@@ -44,7 +44,6 @@ class ResultViewPagerAdapter(private val context: Context, private val dataForVi
 	override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 		if (dataForViewPager[position] != null) {
 			holder as NormalViewHolder
-			holder.recyclerView.setItemViewCacheSize(20)
 			holder.recyclerView.layoutManager = LinearLayoutManager(context)
 			val data = dataForViewPager[position]
 			if (data != null) {
